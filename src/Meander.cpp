@@ -1394,7 +1394,10 @@ struct Meander : Module
 		json_t *BassParmsoctave_enabledJ = json_object_get(rootJ, "theBassParmsoctave_enabled");
 		if (BassParmsoctave_enabledJ)
 			theMeanderState.theBassParms.octave_enabled = json_is_true(BassParmsoctave_enabledJ);
-		
+
+		// Make sure savedHarmonySteps is reset by always applying it after load
+		circleChanged = true;
+		savedHarmonySteps = params[CONTROL_HARMONY_STEPS_PARAM].getValue();
 	}
 
 	    	
@@ -3639,9 +3642,16 @@ struct Meander : Module
 				init_harmony();  // sets up original progressions
 				AuditHarmonyData(3);
 				setup_harmony();  // calculate harmony notes
-				params[CONTROL_HARMONY_STEPS_PARAM].setValue(theHarmonyTypes[harmony_type].num_harmony_steps);
+				if (savedHarmonySteps)
+				{
+					params[CONTROL_HARMONY_STEPS_PARAM].setValue(savedHarmonySteps);
+					savedHarmonySteps = 0;
+				}
+				else
+					params[CONTROL_HARMONY_STEPS_PARAM].setValue(theHarmonyTypes[harmony_type].num_harmony_steps);
 				AuditHarmonyData(3);
 				circleChanged=false;
+
 			}
 
 			// send Poly External Scale to output  // using Aria standard

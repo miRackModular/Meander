@@ -66,7 +66,8 @@ struct CircleOf5ths
 
 
 bool circleChanged=true;
-int harmonyPresetChanged=0; 
+int harmonyPresetChanged=0;
+int savedHarmonySteps = 0;
 
 int semiCircleDegrees[7]={1, 5, 2, 6, 3, 7, 4};  // default order if starting at C
 int circleDegreeLookup[8]= {0, 0, 2, 4, 6, 1, 3, 5};  // to convert from arabic roman equivalents to circle degrees
