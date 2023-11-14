@@ -404,22 +404,25 @@ struct Meander : Module
 		int num_chord_members=chord_type_num_notes[circle_chord_type];
 		if (doDebug) DEBUG("num_chord_members=%d", num_chord_members);
 
-		// if (((theMeanderState.theHarmonyParms.enable_all_7ths)||(theMeanderState.theHarmonyParms.enable_V_7ths))			
-		// 	&& ((circle_chord_type==2)
-		// 	||  (circle_chord_type==3)
-		// 	||  (circle_chord_type==4)
-		// 	||  (circle_chord_type==5)))
-		// 		outputs[OUT_HARMONY_CV_OUTPUT].setChannels(4);  // set polyphony
-		// 	else
-		// 		outputs[OUT_HARMONY_CV_OUTPUT].setChannels(3);  // set polyphony
+		if (((theMeanderState.theHarmonyParms.enable_all_7ths)||(theMeanderState.theHarmonyParms.enable_V_7ths))			
+			&& ((circle_chord_type==2)
+			||  (circle_chord_type==3)
+			||  (circle_chord_type==4)
+			||  (circle_chord_type==5)))
+				outputs[OUT_HARMONY_CV_OUTPUT].setChannels(4);  // set polyphony
+			else
+				outputs[OUT_HARMONY_CV_OUTPUT].setChannels(3);  // set polyphony
 
 		for (int j=0;j<num_chord_members;++j) 
 		{
 			current_chord_note=(int)((int)root_key_note+(int)chord_type_intervals[circle_chord_type][j]);
 			if (doDebug) DEBUG("  current_chord_note=%d %s", current_chord_note, note_desig[current_chord_note%12]);
 			int note_to_play=current_chord_note+(octaveOffset*12);
-			if (j<4)
+			outputs[OUT_HARMONY_CV_OUTPUT].setVoltage((note_to_play/12.0)-4.0,j);
+			if (j>0&&j<4)
+			{
 				outputs[OUT_HARMONY_CV_OUTPUT+j].setVoltage((note_to_play/12.0)-4.0);
+			}
 					
 			if (j<4)
 			{
@@ -675,14 +678,14 @@ struct Meander : Module
 					
 		int step_chord_type= theCircleOf5ths.Circle5ths[current_circle_position].chordType;
 		
-		// if (((theMeanderState.theHarmonyParms.enable_all_7ths)||(theMeanderState.theHarmonyParms.enable_V_7ths))			
-		// && ((theCircleOf5ths.Circle5ths[current_circle_position].chordType==2)
-		// ||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==3)
-		// ||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==4)
-		// ||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==5)))
-		// 	outputs[OUT_HARMONY_CV_OUTPUT].setChannels(4);  // set polyphony
-		// else
-		// 	outputs[OUT_HARMONY_CV_OUTPUT].setChannels(3);  // set polyphony
+		if (((theMeanderState.theHarmonyParms.enable_all_7ths)||(theMeanderState.theHarmonyParms.enable_V_7ths))			
+		&& ((theCircleOf5ths.Circle5ths[current_circle_position].chordType==2)
+		||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==3)
+		||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==4)
+		||  (theCircleOf5ths.Circle5ths[current_circle_position].chordType==5)))
+			outputs[OUT_HARMONY_CV_OUTPUT].setChannels(4);  // set polyphony
+		else
+			outputs[OUT_HARMONY_CV_OUTPUT].setChannels(3);  // set polyphony
 		
 		if (doDebug) DEBUG("step_chord_type=%d", step_chord_type);
 		int num_chord_members=chord_type_num_notes[step_chord_type]; 
@@ -725,17 +728,20 @@ struct Meander : Module
 											
 					if ( (note_to_play%MAX_NOTES)==(theMeanderState.last_harmony_chord_root_note%MAX_NOTES))
 					{
-						outputs[OUT_HARMONY_CV_OUTPUT].setVoltage((note_to_play/12.0)-4.0);
+						outputs[OUT_HARMONY_CV_OUTPUT].setVoltage((note_to_play/12.0)-4.0,0);  // (note, channel)
 						tonicFound=true;
 					}
 					else
 					{
 						if (!tonicFound) {
+							outputs[OUT_HARMONY_CV_OUTPUT].setVoltage((note_to_play/12.0)-4.0,j+1);  // (note, channel)
 							if (j<3)
 								outputs[OUT_HARMONY_CV_OUTPUT+j+1].setVoltage((note_to_play/12.0)-4.0);
-						} else 
-							if (j<4)
+						} else {
+							outputs[OUT_HARMONY_CV_OUTPUT].setVoltage((note_to_play/12.0)-4.0,j);  // (note, channel)
+							if (j>0&&j<4)
 								outputs[OUT_HARMONY_CV_OUTPUT+j].setVoltage((note_to_play/12.0)-4.0);
+						}
 					}
 					
 				
@@ -1093,10 +1099,10 @@ struct Meander : Module
 			if ((theMeanderState.theBassParms.shuffle)&&((theMeanderState.theBassParms.bar_bass_counted_note%3)==2))  // experimenting with bass patterns
 			return;
 
-			// if (theMeanderState.theBassParms.octave_enabled)
-			// 	outputs[OUT_BASS_CV_OUTPUT].setChannels(2);  // set polyphony  may need to deal with unset channel voltages
-			// else
-			// 	outputs[OUT_BASS_CV_OUTPUT].setChannels(1);  // set polyphony  may need to deal with unset channel voltages
+			if (theMeanderState.theBassParms.octave_enabled)
+				outputs[OUT_BASS_CV_OUTPUT].setChannels(2);  // set polyphony  may need to deal with unset channel voltages
+			else
+				outputs[OUT_BASS_CV_OUTPUT].setChannels(1);  // set polyphony  may need to deal with unset channel voltages
 			if (doDebug) DEBUG("    bass note to play=%d %s", theMeanderState.last_harmony_chord_root_note, note_desig[theMeanderState.last_harmony_chord_root_note%MAX_NOTES]);
 				
 			theMeanderState.theBassParms.last[0].note=theMeanderState.last_harmony_chord_root_note+ (theMeanderState.theBassParms.target_octave*12);  
@@ -1107,7 +1113,7 @@ struct Meander : Module
 			if (bar_note_count<256)
 			played_notes_circular_buffer[bar_note_count++]=theMeanderState.theBassParms.last[0];
 
-			outputs[OUT_BASS_CV_OUTPUT].setVoltage((theMeanderState.last_harmony_chord_root_note/12.0)-4.0 +theMeanderState.theBassParms.target_octave);  //(note, channel)	
+			outputs[OUT_BASS_CV_OUTPUT].setVoltage((theMeanderState.last_harmony_chord_root_note/12.0)-4.0 +theMeanderState.theBassParms.target_octave ,0);  //(note, channel)
 				
 			if (theMeanderState.theBassParms.octave_enabled)
 			{
@@ -1120,6 +1126,7 @@ struct Meander : Module
 				if (bar_note_count<256)
 				played_notes_circular_buffer[bar_note_count++]=theMeanderState.theBassParms.last[1];
 
+				outputs[OUT_BASS_CV_OUTPUT].setVoltage((theMeanderState.last_harmony_chord_root_note/12.0)-3.0 +theMeanderState.theBassParms.target_octave ,1);
 			 	outputs[OUT_BASS_NOTE2_OUTPUT].setVoltage((theMeanderState.last_harmony_chord_root_note/12.0)-3.0 +theMeanderState.theBassParms.target_octave);
 			}
 
@@ -5395,7 +5402,7 @@ struct MeanderWidget : ModuleWidget
 
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Meander.svg")));
 					
-		rack::random::init();  // must be called per thread
+		// rack::random::init();  // must be called per thread
 
 			
 		 if (true)   // must be executed in order to see ModuleWidget panel display in preview, module* is checked for null below as it is null in browser preview

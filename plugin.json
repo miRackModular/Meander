@@ -15,7 +15,7 @@
   "modules": [
     {
       "slug": "Meander",
-      "name": "Meander",
+      "name": "Meander (Legacy)",
       "description": "Algorithmic Composer",
       "tags": ["Sequencer", "Polyphonic"]
     } 
