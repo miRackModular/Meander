@@ -128,12 +128,12 @@ NVGcolor MSQ_panelBassPartBaseColor=nvgRGBA((unsigned char)0,(unsigned char)255,
 NVGcolor MSQ_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);  // whiteish
 NVGcolor MSQ_panelTextColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor MSQ_paramTextColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // yellow
-NVGcolor MSQ_panelLineColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)255,(unsigned char)255);  // white
+NVGcolor MSQ_panelLineColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 
-NVGcolor MSQ_panelHarmonyPartColor=nvgRGBA((unsigned char)255,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
+NVGcolor MSQ_panelHarmonyPartColor=nvgRGBA((unsigned char)156,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
 NVGcolor MSQ_panelMelodyPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor MSQ_panelArpPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)255,(unsigned char)255);  // blue
-NVGcolor MSQ_panelBassPartColor=nvgRGBA((unsigned char)0,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // green
+NVGcolor MSQ_panelBassPartColor=nvgRGBA((unsigned char)0,(unsigned char)128,(unsigned char)0,(unsigned char)255);  // green
 
 NVGcolor MSQ_panelHarmonyKeyboardColor=nvgRGBA((unsigned char)0xff,(unsigned char)0x80,(unsigned char)0x80,(unsigned char)255);  // redish
 NVGcolor MSQ_panelMelodyKeyboardColor=nvgRGBA((unsigned char)0x80,(unsigned char)0x80,(unsigned char)0x80,(unsigned char)255);  // blackish

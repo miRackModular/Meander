@@ -549,6 +549,7 @@ struct ModeScaleProgressions : Module
 
 	void doHarmony(int barChordNumber=1, bool playFlag=false)
 	{
+		theModeScaleProgressionsState.updateDisplay = true;
 		outputs[OUT_HARMONY_VOLUME_OUTPUT].setVoltage(theModeScaleProgressionsState.theHarmonyParms.volume);
 		
 		clock_t current_cpu_t= clock();  // cpu clock ticks since program began
@@ -999,17 +1000,17 @@ struct ModeScaleProgressions : Module
 	int lastPlayedScaleDegree=1;
 	int lastPlayedScaleOctave=0;
 	
-	void onRandomize(const RandomizeEvent& e) override {
-		for (int i=0; i<NUM_PARAMS; ++i) 
-		{
-			if (getParamQuantity(i)->randomizeEnabled)
-			{
-				getParamQuantity(i)->randomize();
-			}
-		}
-		// Call super method if you wish to include default behavior
-	    // Module::onRandomize(e);
-	}
+	// void onRandomize(const RandomizeEvent& e) override {
+	// 	for (int i=0; i<NUM_PARAMS; ++i) 
+	// 	{
+	// 		if (getParamQuantity(i)->randomizeEnabled)
+	// 		{
+	// 			getParamQuantity(i)->randomize();
+	// 		}
+	// 	}
+	// 	// Call super method if you wish to include default behavior
+	//     // Module::onRandomize(e);
+	// }
 
     // save button states
 	json_t *dataToJson() override {
@@ -1436,6 +1437,7 @@ struct ModeScaleProgressions : Module
 			}
 			theModeScaleProgressionsState.theHarmonyParms.pending_step_edit=0;
 			runPulse.trigger(0.01f); // delay 10ms
+			theModeScaleProgressionsState.updateDisplay = true;
 		}
 		lights[LIGHT_LEDBUTTON_RUN].setBrightness(running ? 1.0f : 0.0f); 
 		run_pulse = runPulse.process(1.0 / args.sampleRate);  
@@ -1566,7 +1568,8 @@ struct ModeScaleProgressions : Module
 			{
 				doHarmony(0, true);
 			}
-		
+			else
+				theModeScaleProgressionsState.updateDisplay = true;
 		}
 
 		stepLight -= stepLight / lightLambda / args.sampleRate;
@@ -3234,29 +3237,7 @@ struct ModeScaleProgressions : Module
 
 	}  // end ModeScaleProgressions()
 	
-};  // end of struct ModeScaleProgressions
-
-struct MinMaxQuantity : Quantity {
-	float *contrast = NULL;
-	std::string label = "Contrast";
-
-	MinMaxQuantity(float *_contrast, std::string _label) {
-		contrast = _contrast;
-		label = _label;
-	}
-	void setValue(float value) override {
-		*contrast = math::clamp(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return *contrast;
-	}
-
-	float getMinValue() override { return 0.50f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override {return MSP_panelContrastDefault;}
-	std::string getLabel() override { return label; }
-	std::string getUnit() override { return " "; }
-};    
+};  // end of struct ModeScaleProgressions 
 
 
 struct ModeScaleProgressionsPanelThemeItem : MenuItem {    
@@ -3275,14 +3256,6 @@ struct ModeScaleProgressionsPanelThemeItem : MenuItem {
     
 	};
 
-struct MinMaxSliderItem : ui::Slider {
-		MinMaxSliderItem(float *value, std::string label) {
-			quantity = new MinMaxQuantity(value, label);
-		}
-		~MinMaxSliderItem() {
-			delete quantity;
-		}
-    };
 
 struct ModeScaleProgressionsScaleOutModeItem : MenuItem {   
     
@@ -3340,9 +3313,10 @@ struct ModeScaleProgressionsRootKeySelectLineDisplay : LightWidget {
 
 	ModeScaleProgressions *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	ModeScaleProgressionsRootKeySelectLineDisplay() {
-	
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	} 
 
 	void draw(const DrawArgs &args) override {
@@ -3350,7 +3324,7 @@ struct ModeScaleProgressionsRootKeySelectLineDisplay : LightWidget {
 		if (!module)
 			return; 
 		
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
 							
 		Vec textpos = Vec(19,11); 
 		
@@ -3373,11 +3347,11 @@ struct ModeScaleProgressionsRootKeySelectLineDisplay : LightWidget {
 		nvgFillColor(args.vg,MSP_paramTextColor);
 		nvgStrokeWidth(args.vg, 3.0);
 
-		char text[128];
-		snprintf(text, sizeof(text), "%s",MSP_root_key_names[*val]);
-		nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+		// char text[128];
+		// snprintf(text, sizeof(text), "%s",MSP_root_key_names[*val]);
+		nvgText(args.vg, textpos.x, textpos.y, MSP_root_key_names[*val], NULL);
 			
-		nvgClosePath(args.vg);
+		// nvgClosePath(args.vg);
 	}
 
 };
@@ -3386,9 +3360,10 @@ struct ModeScaleProgressionsScaleSelectLineDisplay : LightWidget {
 
    	ModeScaleProgressions *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	ModeScaleProgressionsScaleSelectLineDisplay() {
-    
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	}
 
 	void draw(const DrawArgs &args) override { 
@@ -3396,7 +3371,7 @@ struct ModeScaleProgressionsScaleSelectLineDisplay : LightWidget {
         if (!module)
 			return;
 
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
 			
 		Vec textpos = Vec(68,12); 
 						
@@ -3422,15 +3397,15 @@ struct ModeScaleProgressionsScaleSelectLineDisplay : LightWidget {
 	
 		if (module)  
 		{
-			char text[128];
+			char text[128] = {0};
 			
-			snprintf(text, sizeof(text), "%s",MSP_mode_names[*val]);
-			nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s",MSP_mode_names[*val]);
+			nvgText(args.vg, textpos.x, textpos.y, MSP_mode_names[*val], NULL);
 
 			// add on the scale notes display out of this box
 			nvgFontSize(args.vg, 16);
 			nvgFillColor(args.vg,MSP_panelTextColor);
-			strcpy(text,"");
+			// strcpy(text,"");
 			for (int i=0;i<MSP_mode_step_intervals[*val][0];++i)
 			{
 				strcat(text,module->note_desig[module->notes[i]%MAX_NOTES]);  
@@ -3442,7 +3417,7 @@ struct ModeScaleProgressionsScaleSelectLineDisplay : LightWidget {
 			strcpy(module->MSPScaleText, text);  // save for module instance use
 	   	}
 		
-		nvgClosePath(args.vg);	
+		// nvgClosePath(args.vg);	
 	} 
 
 };
@@ -3452,10 +3427,11 @@ struct ModeScaleProgressionsBpmDisplayWidget : LightWidget {
 
   ModeScaleProgressions *module=NULL;	
   float *val = NULL;
+  std::shared_ptr<Font> font;
 
  
   ModeScaleProgressionsBpmDisplayWidget() {
- 
+	 font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG7ClassicMini-Bold.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -3463,7 +3439,7 @@ struct ModeScaleProgressionsBpmDisplayWidget : LightWidget {
 	if (!module)
 		return;
 
-	std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font, 7-segment display mini bold
+	// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font, 7-segment display mini bold
 		
 	// Background
 	NVGcolor backgroundColor = nvgRGB(0x20, 0x10, 0x10);
@@ -3511,14 +3487,15 @@ struct ModeScaleProgressionsBpmDisplayWidget : LightWidget {
 struct ModeScaleProgressionsSigDisplayWidget : LightWidget {
 
   int *value = NULL;
+  std::shared_ptr<Font> font;
   
   ModeScaleProgressionsSigDisplayWidget() {
-        
+	font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG7ClassicMini-Bold.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
 
-	std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font: , 7-segment display mini bold
+	// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font: , 7-segment display mini bold
 
 	// Display Background is now drawn on the svg panel, even if Module is null (value=null)
     NVGcolor backgroundColor = nvgRGB(0x20, 0x10, 0x10);
@@ -3563,8 +3540,8 @@ struct ModeScaleProgressionsSigDisplayWidget : LightWidget {
  
 struct ModeScaleProgressionsWidget : ModuleWidget  
 {
-	SvgPanel* svgPanel;
-	SvgPanel* darkPanel;
+	// SvgPanel* svgPanel;
+	// SvgPanel* darkPanel;
 	
 	rack::math::Rect  ParameterRect[MAX_PARAMS];  // warning, don't exceed the dimension
     rack::math::Rect  InportRect[MAX_INPORTS];  // warning, don't exceed the dimension
@@ -3582,10 +3559,15 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 		rack::math::Rect*  ParameterRectLocal;   // warning, don't exceed the dimension
 		rack::math::Rect*  InportRectLocal; 	 // warning, don't exceed the dimension
 		rack::math::Rect*  OutportRectLocal;     // warning, don't exceed the dimension
+		std::shared_ptr<Font> textfont;
+		std::shared_ptr<Font> musicfont;
 			
 		CircleOf5thsDisplay(ModeScaleProgressions* module)  
 		{
-		   	this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
+		   	this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation		   	
+		   	textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+		   	musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+		   	canSquash = true;
 		}
  
 		void DrawCircle5ths(const DrawArgs &args, int root_key) 
@@ -3593,7 +3575,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 			for (int i=0; i<MAX_CIRCLE_STATIONS; ++i)
 			{
@@ -3626,7 +3608,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 12);
@@ -3634,11 +3616,11 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFontFaceId(args.vg, textfont->handle);	
 					nvgTextLetterSpacing(args.vg, -1);
 					nvgFillColor(args.vg,MSP_panelTextColor);
-					char text[32];
-					snprintf(text, sizeof(text), "%s",MSP_CircleNoteNames[i]);
+					// char text[32];
+					// snprintf(text, sizeof(text), "%s",MSP_CircleNoteNames[i]);
 					Vec TextPosition=module->theCircleOf5ths.CircleCenter.plus(module->theCircleOf5ths.Circle5ths[i].radialDirection.mult(module->theCircleOf5ths.MiddleCircleRadius*.93f));
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-					nvgText(args.vg, TextPosition.x, TextPosition.y, text, NULL);
+					nvgText(args.vg, TextPosition.x, TextPosition.y, MSP_CircleNoteNames[i], NULL);
 
 			}		
 		};
@@ -3648,7 +3630,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			int chord_type=0; 
 
@@ -3673,7 +3655,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 10);
@@ -3698,10 +3680,10 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					if (i==6) // draw diminished
 					{
 						Vec TextPositionBdim=Vec(TextPosition.x+9, TextPosition.y-4);
-						snprintf(text, sizeof(text), "o");
+						// snprintf(text, sizeof(text), "o");
 						nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 						nvgFontSize(args.vg, 8);
-						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, text, NULL);
+						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, "o", NULL);
 					}
 
 			}	
@@ -3724,12 +3706,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			
 			char text[128];
 
-			snprintf(text, sizeof(text), "%s", label);
+			// snprintf(text, sizeof(text), "%s", label);
 			nvgFillColor(args.vg, textColor);
 				
 			nvgFontSize(args.vg, fontSize);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
-			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, text, NULL);
+			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, label, NULL);
 
 			nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 			nvgFill(args.vg);
@@ -3753,7 +3735,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
    
 		void drawLabelAbove(const DrawArgs &args, Rect rect, const char* label, float fontSize)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg,MSP_panelTextColor);
@@ -3767,7 +3749,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 		void drawLabelRight(const DrawArgs &args, Rect rect, const char* label)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg,MSP_panelTextColor);
@@ -3781,7 +3763,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 		void drawLabelLeft(const DrawArgs &args, Rect rect, const char* label, float xoffset)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg,MSP_panelTextColor);
@@ -3795,7 +3777,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 		void drawLabelOffset(const DrawArgs &args, Rect rect, const char* label, float xoffset, float yoffset, int fontsize=14)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg,MSP_panelTextColor);
@@ -3809,7 +3791,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 		void drawOutport(const DrawArgs &args, Vec OutportPos, const char* label, float value, int valueDecimalPoints, float scale=1.0)  // scale is vertical only
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			Vec displayRectPos= OutportPos.plus(Vec(-3, -scale*15));  // specific for 30x43 size
 			nvgBeginPath(args.vg);
@@ -3996,7 +3978,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, (begintopEdge+whiteKeyLength));//2
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, begintopEdge);//3
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -4021,7 +4003,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//5
-					nvgClosePath(args.vg); //6
+					// nvgClosePath(args.vg); //6
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -4045,7 +4027,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge+whiteKeyLength);//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//6
-					nvgClosePath(args.vg);  //6
+					// nvgClosePath(args.vg);  //6
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -4077,7 +4059,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//6
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//7
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge1, begintopEdge);//8
-					nvgClosePath(args.vg);  //8
+					// nvgClosePath(args.vg);  //8
 										
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					
@@ -4102,7 +4084,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, (begintopEdge+blackKeyLength)); //2
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, begintopEdge);  //3
 					nvgMoveTo(args.vg, blackKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -4134,12 +4116,13 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 			if(module->randEnqueued)
 			{
-				APP->engine->randomizeModule(module);
+				// APP->engine->randomizeModule(module);
+				getAncestorOfType<ModuleWidget>()->randomize();
 				module->randEnqueued=false;
 			}
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
-			std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
 
 						    	
 			if (true)  // Harmony  position a paramwidget  can't access paramWidgets here  
@@ -4165,13 +4148,9 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 				nvgStrokeWidth(args.vg, 2.0); 
 
 				// draw set steps text 
+				drawLabelAbove(args, ParameterRectLocal[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM+0], "Set Step", 15.);  
 				for(int i = 0; i<MAX_STEPS;++i) 
 				{
-					if (i==0)
-					{
-						snprintf(labeltext, sizeof(labeltext), "Set Step");
-						drawLabelAbove(args, ParameterRectLocal[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM+i], labeltext, 15.);  
-					}
 					snprintf(labeltext, sizeof(labeltext), "%d", i+1);
 					drawLabelLeft(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM+i], labeltext, 0.);  
 				}
@@ -4183,50 +4162,50 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x00 , 0x00, 0x80));
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "Harmony Chords Enable");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_PARAM].pos, labeltext, 0, -1,MSP_panelHarmonyPartColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Harmony Chords Enable");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_PARAM].pos, "Harmony Chords Enable", 0, -1,MSP_panelHarmonyPartColor);
 				
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_VOLUME_PARAM].pos, labeltext, module->theModeScaleProgressionsState.theHarmonyParms.volume, 1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_VOLUME_PARAM].pos, "Volume (0-10.0)", module->theModeScaleProgressionsState.theHarmonyParms.volume, 1,MSP_panelTextColor);
 						    
 				snprintf(labeltext, sizeof(labeltext), "Steps (%d-%d)", module->theActiveHarmonyType.min_steps, module->theActiveHarmonyType.max_steps);
 				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_STEPS_PARAM].pos, labeltext, (float)module->theActiveHarmonyType.num_harmony_steps, 0,MSP_panelTextColor);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_TARGETOCTAVE_PARAM].pos, labeltext, module->theModeScaleProgressionsState.theHarmonyParms.target_octave, 0,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_TARGETOCTAVE_PARAM].pos, "Target Oct.(1-7)", module->theModeScaleProgressionsState.theHarmonyParms.target_octave, 0,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_ALPHA_PARAM].pos, labeltext, module->theModeScaleProgressionsState.theHarmonyParms.alpha, 2,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_ALPHA_PARAM].pos, "Variability (0-1)", module->theModeScaleProgressionsState.theHarmonyParms.alpha, 2,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_RANGE_PARAM].pos, labeltext, module->theModeScaleProgressionsState.theHarmonyParms.note_octave_range, 2,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_RANGE_PARAM].pos, "+-Octave Range (0-3)", module->theModeScaleProgressionsState.theHarmonyParms.note_octave_range, 2,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Notes on                    1/");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_DIVISOR_PARAM].pos, labeltext, module->theModeScaleProgressionsState.theHarmonyParms.note_length_divisor, 0,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Notes on                    1/");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONY_DIVISOR_PARAM].pos, "Notes on                    1/", module->theModeScaleProgressionsState.theHarmonyParms.note_length_divisor, 0,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "~Nice 7ths");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "~Nice 7ths");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM].pos, "~Nice 7ths", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "V 7ths");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_V7THS_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "V 7ths");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_V7THS_PARAM].pos, "V 7ths", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "4-Voice Octaves");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "4-Voice Octaves");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM].pos, "4-Voice Octaves", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_STACCATO_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_STACCATO_PARAM].pos, "Staccato", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Tonic ch1");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Tonic ch1");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM].pos, "Tonic ch1", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Bass  ch1");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Bass  ch1");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM].pos, "Bass  ch1", 0, -1,MSP_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Progression Presets");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONYPRESETS_PARAM].pos, labeltext, 0, -1,MSP_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Progression Presets");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONYPRESETS_PARAM].pos, "Progression Presets", 0, -1,MSP_panelTextColor);
 			
 				//  do the progression displays
 				pos =ParameterRectLocal[ModeScaleProgressions::CONTROL_HARMONYPRESETS_PARAM].pos.plus(Vec(-20,45));
@@ -4263,116 +4242,116 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 				nvgBeginPath(args.vg);
 				nvgFontSize(args.vg, 12);
 				nvgFillColor(args.vg,MSP_paramTextColor);
-				snprintf(text, sizeof(text), "%s           ",  module->theActiveHarmonyType.harmony_degrees_desc);
-				nvgText(args.vg, pos.x+5, pos.y+10, text, NULL);
+				// snprintf(text, sizeof(text), "%s           ",  );
+				nvgText(args.vg, pos.x+5, pos.y+10, module->theActiveHarmonyType.harmony_degrees_desc, NULL);
 										
 			}
         
 			if (true)  // draw rounded corner rects  for input jacks border 
 			{
-				char labeltext[128];
+				// char labeltext[128];
 					
-				snprintf(labeltext, sizeof(labeltext), "%s", "RUN");
-				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RUN_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RUN");
+				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RUN_PARAM], "RUN", 12.);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_RUN_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_RUN_OUT].pos, "Out", 0, 1);
 				
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "RESET");
-				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RESET_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RESET");
+				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RESET_PARAM], "RESET", 12.);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "RAND");
-				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RAND_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RAND");
+				drawLabelAbove(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_RAND_PARAM], "RAND", 12.);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_RESET_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_RESET_OUT].pos, "Out", 0, 1);
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "BPM");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TEMPOBPM_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "BPM");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TEMPOBPM_PARAM], "BPM");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Top");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TIMESIGNATURETOP_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Top");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TIMESIGNATURETOP_PARAM], "Time Sig Top");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Bottom");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TIMESIGNATUREBOTTOM_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Bottom");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_TIMESIGNATUREBOTTOM_PARAM], "Time Sig Bottom");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Root");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_ROOT_KEY_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Root");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_ROOT_KEY_PARAM], "Root");
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_SCALE_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleProgressions::CONTROL_SCALE_PARAM], "Mode: bright->to darkest");
 
-			    snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
-				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_POLY_QUANT_EXT_CV], labeltext, -5., -29.);  
+			    // snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
+				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_POLY_QUANT_EXT_CV], "|-----Poly Quantizer-----|", -5., -29.);  
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "In");
-				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_POLY_QUANT_EXT_CV], labeltext, +2., -12.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "In");
+				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_POLY_QUANT_EXT_CV], "In", +2., -12.); 
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "8x BPM Clock");
-				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_CLOCK_EXT_CV], labeltext, -4., -26.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "8x BPM Clock");
+				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_CLOCK_EXT_CV], "8x BPM Clock", -4., -26.); 
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "In");
-				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_CLOCK_EXT_CV], labeltext, +2., -12.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "In");
+				drawLabelOffset(args, InportRectLocal[ModeScaleProgressions::IN_CLOCK_EXT_CV], "In", +2., -12.); 
 													
 			}
 
 			if (true)  // draw rounded corner rects  for output jacks border 
 			{
-				char labeltext[128];
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_CV_OUTPUT].pos, labeltext, 0, 1);
+				// char labeltext[128];
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_CV_OUTPUT].pos, "1V/Oct", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_GATE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_GATE_OUTPUT].pos, "Gate", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_VOLUME_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_HARMONY_VOLUME_OUTPUT].pos, "Volume", 0, 1);
            
-				snprintf(labeltext, sizeof(labeltext), "%s", "Bar");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BAR_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Bar");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BAR_OUTPUT].pos, "Bar", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beat");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEAT_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beat");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEAT_OUTPUT].pos, "Beat", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx2");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx2");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT].pos, "Beatx2", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "1ms Clocked Trigger Pulses");
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1ms Clocked Trigger Pulses");
 				rack::math::Rect rect=OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT];
 				rect.pos=rect.pos.plus(Vec(0,-16));
-				drawLabelAbove(args, rect, labeltext, 18.);
+				drawLabelAbove(args, rect, "1ms Clocked Trigger Pulses", 18.);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx4");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX4_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx4");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX4_OUTPUT].pos, "Beatx4", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx8");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX8_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx8");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_BEATX8_OUTPUT].pos, "Beatx8", 0, 1);
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_ROOT_OUTPUT].pos, labeltext, 0, 1, 0.8);  // scale height by 0.8x
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_ROOT_OUTPUT].pos, "Out", 0, 1, 0.8);  // scale height by 0.8x
 
-                snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., 7.0); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +19.0); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +31.0); 
+                // snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], "Poly", -26., 7.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], "Ext.->", -26., +19.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT], "Scale", -26., +31.0); 
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				// drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT].pos, "Out", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_QUANT_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_QUANT_OUTPUT].pos, "Quants", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, "Trigs", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_CLOCK_OUT].pos, "Out", 0, 1);
 						
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_SCALE_OUTPUT].pos, "Out", 0, 1);
            
 			}
 
@@ -4429,12 +4408,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			  nvgTextLetterSpacing(args.vg, -1);
 			  nvgFillColor(args.vg,MSP_panelLineColor);
 			  pos=Vec(beginEdge+12, beginTop+54); 
-			  snprintf(text, sizeof(text), "%s",MSP_gClef.c_str());  
-			  nvgText(args.vg, pos.x, pos.y, text, NULL);
+			  // snprintf(text, sizeof(text), "%s",MSP_gClef.c_str());  
+			  nvgText(args.vg, pos.x, pos.y, MSP_gClef.c_str(), NULL);
 			
 			  nvgFontSize(args.vg, 90);
 			  nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-			  snprintf(text, sizeof(text), "%s",MSP_sharp.c_str());  
+			  // snprintf(text, sizeof(text), "%s",MSP_sharp.c_str());  
 					      
 			  for (int i=0; i<7; ++i)
 			  {
@@ -4443,13 +4422,13 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 				    {
 				      vertical_offset1=MSP_root_key_sharps_vertical_display_offset[num_sharps1];
 					  pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-					  nvgText(args.vg, pos.x, pos.y, text, NULL);
+					  nvgText(args.vg, pos.x, pos.y, MSP_sharp.c_str(), NULL);
 					  ++num_sharps1;
 				    }
-			  	  nvgClosePath(args.vg);
+			  	  // nvgClosePath(args.vg);
 			  }	
 		
-			  snprintf(text, sizeof(text), "%s",MSP_flat.c_str());  
+			  // snprintf(text, sizeof(text), "%s",MSP_flat.c_str());  
 			  vertical_offset1=0;
 			  for (int i=6; i>=0; --i)
 			  {
@@ -4458,15 +4437,15 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 				  {
 				     vertical_offset1=MSP_root_key_flats_vertical_display_offset[num_flats1];
 				   	 pos=Vec(beginEdge+24+(num_flats1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-					 nvgText(args.vg, pos.x, pos.y, text, NULL);
+					 nvgText(args.vg, pos.x, pos.y, MSP_flat.c_str(), NULL);
 					 ++num_flats1;
 				  }
-				  nvgClosePath(args.vg);
+				  // nvgClosePath(args.vg);
 			  }	
 			}
 
 		
-			nvgFontSize(args.vg, 8);
+			nvgFontSize(args.vg, 10);
 			
 			if (textfont)
 			nvgFontFaceId(args.vg, textfont->handle);
@@ -4474,16 +4453,16 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgFillColor(args.vg,MSP_panelTextColor);
 
 			pos=Vec(beginEdge+0, beginTop+95);  
-			snprintf(text, sizeof(text), "%s", "In--");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "In--");
+			nvgText(args.vg, pos.x, pos.y, "In--", NULL);
 
 			pos=Vec(beginEdge+0, beginTop+115);  
-			snprintf(text, sizeof(text), "%s", "In--");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "In--");
+			nvgText(args.vg, pos.x, pos.y, "In--", NULL);
 
 			pos=Vec(beginEdge+46, beginTop+95);   
 
-			nvgFontSize(args.vg, 8);  // make it a bit smaller to fit and scale best
+			// nvgFontSize(args.vg, 8);  // make it a bit smaller to fit and scale best
 		
 		    if (module->harmonic_degree_out_mode == module->RANGE_1to7)
 				snprintf(text, sizeof(text), "%s", "(1-7)  1V/Deg  (1-7)");
@@ -4492,19 +4471,19 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgText(args.vg, pos.x, pos.y, text, NULL);
 			
 			pos=Vec(beginEdge+30, beginTop+115);  
-			snprintf(text, sizeof(text), "%s", "--Gate");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "--Gate");
+			nvgText(args.vg, pos.x, pos.y, "--Gate", NULL);
 
-			snprintf(text, sizeof(text), "%s", "Out");
-			drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_OUTPUT].pos, text, 0, 1, 0.8);  // scale height by 0.8x);
+			// snprintf(text, sizeof(text), "%s", "Out");
+			drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_OUTPUT].pos, "Out", 0, 1, 0.8);  // scale height by 0.8x);
 
-			snprintf(text, sizeof(text), "%s", "Chord Type--");
-			drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT], text, -31., +12.0, 8); 
-			snprintf(text, sizeof(text), "%s", "");
-			drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT].pos, text, 0, 1, 0.8);  // scale height by 0.8x);
+			// snprintf(text, sizeof(text), "%s", "Chord Type--");
+			drawLabelOffset(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT], "Chord Type--", -31., +12.0, 9); 
+			// snprintf(text, sizeof(text), "%s", "");
+			drawOutport(args, OutportRectLocal[ModeScaleProgressions::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT].pos, "", 0, 1, 0.8);  // scale height by 0.8x);
 
-			snprintf(text, sizeof(text), "%s", "--Step");
-			drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_PROG_STEP_PARAM].pos.plus(Vec(0,-2)), text, 0, -1,MSP_panelTextColor, 8);
+			// snprintf(text, sizeof(text), "%s", "--Step");
+			drawHarmonyControlParamLine(args,ParameterRectLocal[ModeScaleProgressions::BUTTON_PROG_STEP_PARAM].pos.plus(Vec(0,-2)), "--Step", 0, -1,MSP_panelTextColor, 10);
 
 			nvgFontSize(args.vg, 12);
 			
@@ -4529,9 +4508,9 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgTextLetterSpacing(args.vg, -1);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
 			nvgFillColor(args.vg,MSP_panelTextColor);
-			snprintf(text, sizeof(text), "%s", "Playing Notes---->");  
+			// snprintf(text, sizeof(text), "%s", "Playing Notes---->");  
 			pos=Vec(notesPlayingDisplayStartX-85, notesPlayingDisplayNoteCenterY);  
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			nvgText(args.vg, pos.x, pos.y, "Playing Notes---->", NULL);
 		
 			nvgStrokeWidth(args.vg, 2.0);
 			nvgStrokeColor(args.vg, nvgRGBA( 0x00,  0x00, 0x00, 0xff));
@@ -4543,7 +4522,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgLineTo(args.vg, notesPlayingDisplayStartX, notesPlayingDisplayStartY);
 
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 
 			// draw vertical parts separator lines dark
 			nvgBeginPath(args.vg);
@@ -4553,7 +4532,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgLineTo(args.vg, notesPlayingDisplayStartX+((4*notesPlayingDisplayNoteWidth)), notesPlayingDisplayEndY);
 
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 
 			// draw vertical part notes separator lines light
 
@@ -4570,7 +4549,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			nvgLineTo(args.vg, notesPlayingDisplayStartX+((3*notesPlayingDisplayNoteWidth)), notesPlayingDisplayEndY);
 			
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 			
 			if (module->moduleVarsInitialized)  // globals fully initialized if Module!=NULL
 			{
@@ -4856,49 +4835,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 		
 		void draw(const DrawArgs &args) override   
 		{   
-		 	if (!module)  // if there is no module, draw the static panel image, i.e., in the browser
-			{
-				nvgBeginPath(args.vg);
-				nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
-				
-				if (MSP_panelTheme==0)  // light theme
-				{
-					std::shared_ptr<Image> lightPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/ModeScaleProgressions-light.png"));
-					if (lightPanelImage) 
-					{
-						int height=0;
-						int width=0;
-						nvgImageSize(args.vg, lightPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, lightPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-				else // dark theme
-				{
-					std::shared_ptr<Image> darkPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/ModeScaleProgressions-dark.png"));
-					if (darkPanelImage) 
-					{
-						int height=0;
-				        int width=0;
-						nvgImageSize(args.vg, darkPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, darkPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-							
-				nvgClosePath(args.vg);
-			    Widget::draw(args);
-			    return;  // do not proceedurally draw panel 
-			}
-
 			if (true)  // false to disable most nanovg panel rendering for testing   
 			{
 				         							
 				// draw ModeScaleProgressions logo and chord legend
 				
-				std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+				// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 				if (textfont)
 				{
@@ -4911,25 +4853,25 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 					
 					char text[128];
-					snprintf(text, sizeof(text), "%s", "PS-PurrSoftware  ModeScaleProgressions");  
+					// snprintf(text, sizeof(text), "%s", "PS-PurrSoftware  ModeScaleProgressions");  
 					Vec pos=Vec(245, 15); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "PS-PurrSoftware  ModeScaleProgressions", NULL);
 
-					snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
+					// snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
 					nvgFontSize(args.vg, 11);
 					pos=Vec(275, 340); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "Mode Scale Notes", NULL);
 				
 
-					snprintf(text, sizeof(text), "%s", "Harmonic Progression Diatonic Circle of 5ths");  
+					// snprintf(text, sizeof(text), "%s", "Harmonic Progression Diatonic Circle of 5ths");  
 					nvgFontSize(args.vg, 15);
 					pos=Vec(345, 35);  
 					nvgStrokeWidth(args.vg, 2.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "Harmonic Progression Diatonic Circle of 5ths", NULL);
 
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 
 					nvgStrokeWidth(args.vg, 1.0);
 					nvgStrokeColor(args.vg,MSP_panelLineColor);
@@ -4946,12 +4888,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0xff, 0x20, 0x20, (int)opacity));  // reddish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Major"); 
+					// snprintf(text, sizeof(text), "%s", "Major"); 
 					nvgFillColor(args.vg,MSP_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(261, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Major", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, 325, 45);
@@ -4962,12 +4904,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0x20, 0xff, (int)opacity));  //bluish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Minor"); 
+					// snprintf(text, sizeof(text), "%s", "Minor"); 
 					nvgFillColor(args.vg,MSP_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(336, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Minor", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, 400, 45);
@@ -4978,12 +4920,12 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0xff, 0x20, (int)opacity));  // greenish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Diminished"); 
+					// snprintf(text, sizeof(text), "%s", "Diminished"); 
 					nvgFillColor(args.vg,MSP_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(404, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Diminished", NULL);
+					// nvgClosePath(args.vg);
 
 					// Time display on panel
 					if (module)  
@@ -5036,6 +4978,8 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 	
 	};  // end struct CircleOf5thsDisplay  
 
+	CircleOf5thsDisplay *display;
+
 	float dummytempo=120;  // for module==null browser visibility purposes
 	int dummysig=4;        // for module==null browser visibility purposes
 	int dummyindex=0;      // for module==null browser visibility purposes
@@ -5046,17 +4990,17 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 		this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
 			
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleProgressions-light.svg"))); 
-		svgPanel=(SvgPanel*)getPanel();
-		svgPanel->setVisible((MSP_panelTheme) == 0);  
+		// svgPanel=(SvgPanel*)getPanel();
+		// svgPanel->setVisible((MSP_panelTheme) == 0);  
 				
 		MSP_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
 		
-		darkPanel = new SvgPanel();
-		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleProgressions-dark.svg")));
-		darkPanel->setVisible((MSP_panelTheme) == 1);  
-		addChild(darkPanel);
+		// darkPanel = new SvgPanel();
+		// darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleProgressions-dark.svg")));
+		// darkPanel->setVisible((MSP_panelTheme) == 1);  
+		// addChild(darkPanel);
 							
-		rack::random::init();  // must be called per thread
+		// rack::random::init();  // must be called per thread
 
 		 if (true)   // must be executed even if module* is null. module* is checked for null below where accessed as it is null in browser preview
 		 {
@@ -5089,7 +5033,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			
 			addChild(ModeScaleProgressionsScaleSelectDisplay);
 
-			CircleOf5thsDisplay *display = new CircleOf5thsDisplay(module);
+			display = new CircleOf5thsDisplay(module);
 			display->ParameterRectLocal=ParameterRect;
 			display->InportRectLocal=InportRect;  
 			display->OutportRectLocal=OutportRect;  
@@ -5140,62 +5084,62 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			//*************   Note: Each LEDButton needs its light and that light needs a unique ID, needs to be added to an array and then needs to be repositioned along with the button.  Also needs to be enumed with other lights so lights[] picks it up.
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_C_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.227, 37.257)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_C_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_C_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_1);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_1);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_1]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_G_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.479, 41.32)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_G_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_G_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_2);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_2);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_2]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_D_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(143.163, 52.155)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_D_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_D_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_3);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_3);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_3]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_A_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(147.527, 67.353)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_A_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_A_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_4);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_4);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_4]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_E_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(141.96, 83.906)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_E_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_E_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_5);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_5);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_5]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_B_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.931, 94.44)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_B_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_B_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_6);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_6);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_6]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_GBFS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.378, 98.804)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_GBFS_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_GBFS_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_7);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_7);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_7]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_DB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.029, 93.988)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_DB_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_DB_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_8);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_8);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_8]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_AB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(91.097, 83.906)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_AB_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_AB_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_9);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_9);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_9]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_EB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(86.282, 68.106)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_EB_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_EB_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_10);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_10);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_10]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_BB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(89.743, 52.004)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_BB_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_BB_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_11);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_11);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_11]);
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_F_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.781, 40.568)), module, ModeScaleProgressions::BUTTON_CIRCLESTEP_F_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_CIRCLESTEP_F_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_12);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_12);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESTEP_12]);
 		
 	//*************
@@ -5241,114 +5185,114 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 					
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.197, 106.483)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_1_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.197, 106.483)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_1);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.197, 106.483)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_1);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_2_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 98.02)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_2_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_2_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 98.02)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_2);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 98.02)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_2);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]);
 
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_3_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 89.271)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_3_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_3_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 89.271)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_3);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 89.271)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_3);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_4_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 81.9233)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_4_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_4_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 81.923)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_4);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 81.923)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_4);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]);
 
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_5_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 73.184)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_5_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_5_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 73.184)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_5);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 73.184)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_5);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_6_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 66.129)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_6_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_6_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 66.129)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_6);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 66.129)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_6);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_7_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 57.944)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_7_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_7_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 57.944)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_7);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 57.944)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_7);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_8_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.911, 49.474)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_8_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_8_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.911, 49.474)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_8);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.911, 49.474)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_8);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_9_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(4.629, 41.011)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_9_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_9_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(4.629, 41.011)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_9);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.629, 41.011)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_9);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_10_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.629, 32.827)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_10_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_10_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.629, 32.827)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_10);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.629, 32.827)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_10);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_11_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.629, 24.649)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_11_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_11_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.629, 24.649)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_11);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.629, 24.649)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_11);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_12_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_12_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_12_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_12);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_12);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]);
 
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_13_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_13_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_13_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_13);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_13);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]);
 
 		
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_14_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_14_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_14_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_14);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_14);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_15_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_15_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_15_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_15);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_15);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]);
 
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_16_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_16_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_HARMONY_SETSTEP_16_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_16);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_16);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]);
 
 			//**********General************************
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_RUN_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(19.7, 10.45)), module, ModeScaleProgressions::BUTTON_RUN_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_RUN_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RUN]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(19.7, 10.45)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RUN);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RUN]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(19.7, 10.45)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RUN);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RUN]);
         
 			paramWidgets[ModeScaleProgressions::BUTTON_RESET_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(19.7, 22.55)), module, ModeScaleProgressions::BUTTON_RESET_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_RESET_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RESET]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(19.7, 22.55)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RESET);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RESET]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(19.7, 22.55)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RESET);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RESET]);
 
 			paramWidgets[ModeScaleProgressions::BUTTON_RAND_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(29.7, 22.55)), module, ModeScaleProgressions::BUTTON_RAND_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_RAND_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RAND]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(29.7, 22.55)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RAND);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RAND]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(29.7, 22.55)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_RAND);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_RAND]);
          
 			paramWidgets[ModeScaleProgressions::CONTROL_TEMPOBPM_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(8.12, 35.4)), module, ModeScaleProgressions::CONTROL_TEMPOBPM_PARAM);
@@ -5372,7 +5316,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 						
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 12.622)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_HARMONY_ENABLE]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 12.622)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_HARMONY_ENABLE);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_HARMONY_ENABLE]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 12.622)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_HARMONY_ENABLE);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_HARMONY_ENABLE]);
 		
 			paramWidgets[ModeScaleProgressions::CONTROL_HARMONY_VOLUME_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(173.849, 20.384)), module, ModeScaleProgressions::CONTROL_HARMONY_VOLUME_PARAM);
@@ -5398,17 +5342,17 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 69)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 69)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 69)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]);
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_V7THS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(203.849, 69)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_V7THS_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_V7THS_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(203.849, 69)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(203.849, 69)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]);
 			
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_STACCATO_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_STACCATO_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]);
 			
 			paramWidgets[ModeScaleProgressions::CONTROL_HARMONYPRESETS_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(174.027, 81.524)), module, ModeScaleProgressions::CONTROL_HARMONYPRESETS_PARAM);
@@ -5420,23 +5364,23 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 
 			paramWidgets[ModeScaleProgressions::BUTTON_PROG_STEP_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(350, 250)), module, ModeScaleProgressions::BUTTON_PROG_STEP_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_PROG_STEP_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_PROG_STEP_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(350, 250)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_PROG_STEP_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_PROG_STEP_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(350, 250)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_PROG_STEP_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_PROG_STEP_PARAM]);
 
 			// Appended params
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(203.849, 75)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(203.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(203.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]);
 
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]);
 
 			paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
 			addParam(paramWidgets[ModeScaleProgressions::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]);
-			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
+			lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
 			addChild(lightWidgets[ModeScaleProgressions::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]);
 			
 					 
@@ -5487,8 +5431,8 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			outPortWidgets[ModeScaleProgressions::OUT_HARMONY_GATE_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(202.071, 124.267)), module, ModeScaleProgressions::OUT_HARMONY_GATE_OUTPUT);
 			addOutput(outPortWidgets[ModeScaleProgressions::OUT_HARMONY_GATE_OUTPUT]);
 
-			outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(380.0, 124.831)), module, ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT);
-			addOutput(outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]);
+			// outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(380.0, 124.831)), module, ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT);
+			// addOutput(outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]);
 
 			outPortWidgets[ModeScaleProgressions::OUT_CLOCK_OUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(45.0, 350.0)), module, ModeScaleProgressions::OUT_CLOCK_OUT);
 			addOutput(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_OUT]);
@@ -5749,7 +5693,7 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 			drawCenter=drawCenter.plus(Vec(33,0));
 
 			drawCenter=Vec(145., 289.);
-			outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
+			// outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleProgressions::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
 			drawCenter=drawCenter.plus(Vec(40,0));
 				
 			drawCenter=Vec(50., 365.); 
@@ -5810,63 +5754,37 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 	void appendContextMenu(Menu *menu) override 
 	{  
         ModeScaleProgressions *module = dynamic_cast<ModeScaleProgressions*>(this->module);
-		if (module==NULL)
-			return;
-   
-		MenuLabel *panelthemeLabel = new MenuLabel();
-        panelthemeLabel->text = "Panel Theme                               ";
-        menu->addChild(panelthemeLabel);
-
-		ModeScaleProgressionsPanelThemeItem *lightpaneltheme_Item = new ModeScaleProgressionsPanelThemeItem();  // this accomodates json loaded value
-        lightpaneltheme_Item->text = "  light";
-		lightpaneltheme_Item->module = module;
-   	    lightpaneltheme_Item->theme = 0;
-	    menu->addChild(lightpaneltheme_Item); 
-
-		ModeScaleProgressionsPanelThemeItem *darkpaneltheme_Item = new ModeScaleProgressionsPanelThemeItem();  // this accomodates json loaded value
-        darkpaneltheme_Item->text = "  dark";
-		darkpaneltheme_Item->module = module;
-   	    darkpaneltheme_Item->theme = 1;
-        menu->addChild(darkpaneltheme_Item);
-
-		// create contrast control
 	
-		MinMaxSliderItem *minSliderItem = new MinMaxSliderItem(&MSP_panelContrast, "Contrast");
-		minSliderItem->box.size.x = 200.f;
-		menu->addChild(minSliderItem);
-	
-		//
-
-		MenuLabel *modeLabel = new MenuLabel();
-        modeLabel->text = "Scale Out Mode                               ";
-        menu->addChild(modeLabel);
+		// MenuLabel *modeLabel = new MenuLabel();
+        // modeLabel->text = "Scale Out Mode                               ";
+        // menu->addChild(modeLabel);
 		
 		
-		ModeScaleProgressionsScaleOutModeItem *chromatic_Item = new ModeScaleProgressionsScaleOutModeItem();
-        chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
-        chromatic_Item->module = module;
-        chromatic_Item->mode = ModeScaleProgressions::HEPTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_Item);
+		// ModeScaleProgressionsScaleOutModeItem *chromatic_Item = new ModeScaleProgressionsScaleOutModeItem();
+        // chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
+        // chromatic_Item->module = module;
+        // chromatic_Item->mode = ModeScaleProgressions::HEPTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_Item);
 
-		ModeScaleProgressionsScaleOutModeItem *heptatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
-        heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
-        heptatonic_Item->module = module;
-        heptatonic_Item->mode = ModeScaleProgressions::HEPTATONIC_DIATONIC_STD_7CH;
-        menu->addChild(heptatonic_Item);
+		// ModeScaleProgressionsScaleOutModeItem *heptatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
+        // heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
+        // heptatonic_Item->module = module;
+        // heptatonic_Item->mode = ModeScaleProgressions::HEPTATONIC_DIATONIC_STD_7CH;
+        // menu->addChild(heptatonic_Item);
 
 
-		ModeScaleProgressionsScaleOutModeItem *pentatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
-        pentatonic_Item->text = "  Pentatonic-5ch";
-        pentatonic_Item->module =module;
-        pentatonic_Item->mode = ModeScaleProgressions::PENTATONIC_5CH;
-        menu->addChild(pentatonic_Item); 
+		// ModeScaleProgressionsScaleOutModeItem *pentatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
+        // pentatonic_Item->text = "  Pentatonic-5ch";
+        // pentatonic_Item->module =module;
+        // pentatonic_Item->mode = ModeScaleProgressions::PENTATONIC_5CH;
+        // menu->addChild(pentatonic_Item); 
 		
 
-		ModeScaleProgressionsScaleOutModeItem *chromatic_pentatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
-        chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
-        chromatic_pentatonic_Item->module = module;
-        chromatic_pentatonic_Item->mode = ModeScaleProgressions::PENTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_pentatonic_Item);
+		// ModeScaleProgressionsScaleOutModeItem *chromatic_pentatonic_Item = new ModeScaleProgressionsScaleOutModeItem();
+        // chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
+        // chromatic_pentatonic_Item->module = module;
+        // chromatic_pentatonic_Item->mode = ModeScaleProgressions::PENTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_pentatonic_Item);
 
 		
    		MenuLabel *modeLabel3 = new MenuLabel();
@@ -5912,353 +5830,152 @@ struct ModeScaleProgressionsWidget : ModuleWidget
 	{  
 		ModeScaleProgressions *module = dynamic_cast<ModeScaleProgressions*>(this->module);  
 
-		if (true) // needs to happen even if module==null
+		if (module->theModeScaleProgressionsState.updateDisplay)
 		{
-			if (svgPanel)
-			    svgPanel->setVisible((MSP_panelTheme) == 0);    
-			if (darkPanel)                             
-				darkPanel->setVisible((MSP_panelTheme) == 1);    
-		
-			float contrast=MSP_panelContrast;
-
-			// update the global panel theme vars
-			if (MSP_panelTheme==0)  // light theme
-			{
-				MSP_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
-				float color =255*(1-contrast);
-				MSP_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black text
-				MSP_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black lines
-				color =255*contrast;
-				MSP_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-			
-				{
-					float r=MSP_panelHarmonyPartBaseColor.r; 
-					float g=(1-contrast);
-					float b=(1-contrast);
-					MSP_panelHarmonyPartColor=nvgRGBA(r*156, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=MSP_panelArpPartBaseColor.b;
-					MSP_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=MSP_panelBassPartBaseColor.g;
-					float b=(1-contrast);
-					MSP_panelBassPartColor=nvgRGBA(r*255, g*128, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=(1-contrast);
-					MSP_panelMelodyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-						 
-			}
-			else  // dark theme   
-			{
-				MSP_panelcolor=nvgRGBA((unsigned char)40,(unsigned char)40,(unsigned char)40,(unsigned char)255);
-				float color = 255*contrast;
-				MSP_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white text
-				MSP_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white lines
-				color =255*contrast;
-				MSP_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-
-				{
-					float r=MSP_panelHarmonyPartBaseColor.r*contrast;
-					float g=0.45;
-					float b=0.45;
-					MSP_panelHarmonyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float b=MSP_panelArpPartBaseColor.b*contrast;
-					float r=0.45;
-					float g=0.45;
-					MSP_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float g=MSP_panelBassPartBaseColor.g*contrast;
-					float r=0.45;
-					float b=0.45;
-					MSP_panelBassPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(contrast);
-					float g=(contrast);
-					float b=(contrast);
-					MSP_panelMelodyPartColor=nvgRGBA(r*228, g*228, b*228, 255);
-				}
-			}
+			module->theModeScaleProgressionsState.updateDisplay = false;
+			display->dirty = true;
 		}
 
 		// determine STEP cable connections to ModeScaleProgressions trigger outs, if any
-	  	if (module != NULL)  // not in the browser
 		{  
-			module->onResetScale();  // make sure channels and scale notes outports are initialized for each frame, in case they have not been iniitialized
-			
-			module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=0;  // 0 will be interpreted elsewhere as "no connection", which may be overwritten below
-	
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[ModeScaleProgressions::IN_PROG_STEP_EXT_CV]))
-			{	
-				if (!cwIn->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   continue;
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[ModeScaleProgressions::IN_PROG_STEP_EXT_CV]))
+			{
+				auto cable = cwIn->wire;
 
-				module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection, which may be overwritten below
-				
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_BAR_OUTPUT]))
+				if (cable->outputModule == module)
 				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=ModeScaleProgressions::OUT_CLOCK_BAR_OUTPUT;  
-					}
-										
+					if (cable->outputId == ModeScaleProgressions::OUT_CLOCK_BAR_OUTPUT ||
+						cable->outputId == ModeScaleProgressions::OUT_CLOCK_BEAT_OUTPUT ||
+						cable->outputId == ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT ||
+						cable->outputId == ModeScaleProgressions::OUT_CLOCK_BEATX4_OUTPUT ||
+						cable->outputId == ModeScaleProgressions::OUT_CLOCK_BEATX8_OUTPUT)
+						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port = cable->outputId;
+					else
+						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection
 				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_BEAT_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=ModeScaleProgressions::OUT_CLOCK_BEAT_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=ModeScaleProgressions::OUT_CLOCK_BEATX2_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_BEATX4_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=ModeScaleProgressions::OUT_CLOCK_BEATX4_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[ModeScaleProgressions::OUT_CLOCK_BEATX8_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=ModeScaleProgressions::OUT_CLOCK_BEATX8_OUTPUT;  
-					}
-				}
+				else
+					module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection
 			}
+			else
+				module->theModeScaleProgressionsState.theHarmonyParms.STEP_inport_connected_to_ModeScaleProgressions_trigger_port=0;  // 0 will be interpreted elsewhere as "no connection"
 		}
 
-		// root inport cable handling 
-		if (module != NULL)  // not in the browser
+		// // root inport cable handling 
 		{
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[ModeScaleProgressions::IN_ROOT_KEY_EXT_CV]))  // look at each cable on the root key input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[ModeScaleProgressions::IN_ROOT_KEY_EXT_CV]))
 			{
-				if (!cwIn->isComplete())    // the cable connection has NOT been completed
-				{        
-				   module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_ROOT_KEY_EXT_CV
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
+			
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+				if ((outputmodel->slug == "ModeScaleProgressions") ||
+					(outputmodel->slug == "ModeScaleQuant") ||
+					(outputmodel->slug == "Meander"))
 				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
-				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				    if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{
-							if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							{
-							    if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than ModeScaleProgressions
-							{
-								module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-						}
-					}
-					else  // no outputModule
-					{
-						module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-					}
-
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
-					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
-						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-								if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-									(inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-									(inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-									{
-										if (inputId==ModeScaleProgressions::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
-										{
-										}
-										else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
-										{
-											module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-										}
-									}
-									else  // connected to moudule other than Maender
-									{
-										module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-									}
-							}
-							else  // no input model
-							{
-								module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-							}
-						}
-						else  // "cable inputModule is equal to cable outputModule"
-						{
-							module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
-						}
-					}
-					else  // no input module
-					{
-						module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
+						module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
 					}
 				}
-				else  // there is no cable attached
+				else // connected to moudule other than Meander
 				{
 					module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
 				}
-			} 
-		}  
 
-		// add mode inport cable handling 
-		if (module != NULL)  // not in the browser
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+					if ((inputmodel->slug == "ModeScaleProgressions")||
+						(inputmodel->slug == "ModeScaleQuant")|| 
+					    (inputmodel->slug == "Meander")) 
+					{
+						if (inputId==ModeScaleProgressions::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
+						{
+						}
+						else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
+						{
+							module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
+						}
+					}
+					else  // connected to moudule other than Maender
+					{
+						module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
+					}
+				}
+				else  // "cable inputModule is equal to cable outputModule"
+				{
+					module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
+				}
+			}
+			else  // there is no cable attached
+			{
+				module->theModeScaleProgressionsState.RootInputSuppliedByRootOutput=false;
+			}
+		}
+
+		// // add mode inport cable handling 
 		{
 			//"Examine module MODE cables--------------------"
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[ModeScaleProgressions::IN_SCALE_EXT_CV]))  // look at each cable on the mode scale input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[ModeScaleProgressions::IN_SCALE_EXT_CV]))
 			{
-				if (!cwIn->isComplete())   // the cable connection has NOT been completed    
-				{        
-				   module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_SCALE_EXT_CV
-				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
 				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+			    if ((outputmodel->slug == "ModeScaleProgressions") ||  
+			    	(outputmodel->slug == "ModeScaleQuant") ||  
+				    (outputmodel->slug == "Meander"))  
+				{
+					if ((outputId==5)||(outputId==27)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT" kludge out of scope ModeScaleQuant variable access
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{         
-						    if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							{
-								if ((outputId==5)||(outputId==27)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than ModeScaleProgressions
-							{
-								module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-						}
+						module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
 					}
-					else  // no outputModule
-					{
-						module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-					}
+				}
+				else // connected to moudule other than Meander
+				{
+					module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
+				}
 
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+					if ((inputmodel->slug == "ModeScaleProgressions") ||
+						(inputmodel->slug == "ModeScaleQuant") ||
+					    (inputmodel->slug == "Meander")) 
 					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+						if (inputId==ModeScaleProgressions::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
 						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-							    if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							       (inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							       (inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-								{
-									if (inputId==ModeScaleProgressions::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
-									{
-									}
-									else // "cable inputID is not IN_SCALE_EXT_CV"
-									{
-										module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-									}
-								}
-								else  // connected to moudule other than Maender
-								{
-									module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-								}
-							}
-							else  // no input model
-							{
-								module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
-							}
 						}
-						else  // "cable inputModule is equal to cable outputModule"
+						else // "cable inputID is not IN_SCALE_EXT_CV"
 						{
 							module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
 						}
 					}
-					else  // no input module
+					else  // connected to moudule other than Maender
 					{
 						module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
 					}
 				}
-				else  // there is no cable attached
+				else  // "cable inputModule is equal to cable outputModule"
 				{
 					module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
 				}
 			}
+			else  // there is no cable attached
+			{
+				module->theModeScaleProgressionsState.ModeInputSuppliedByModeOutput=false;
+			}
 		
-		}  
+		}
+		
+		// }  
 		//
 
-		// if in the browser, force a panel redraw per frame with the current panel theme
-		if (!module) {
-			DirtyEvent eDirty;
-			parent->parent->onDirty(eDirty);
-		}
-		else  // not in the browser
-		Widget::step();  // most modules do this rather than ModuleWidget::step()
+		ModuleWidget::step();
 	
 		
 	} // end step()

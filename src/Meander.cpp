@@ -675,6 +675,7 @@ struct Meander : Module
 
 	void doHarmony(int barChordNumber=1, bool playFlag=false)
 	{
+		theMeanderState.updateDisplay = true;
 		outputs[OUT_HARMONY_VOLUME_OUTPUT].setVoltage(theMeanderState.theHarmonyParms.volume);
 		
 		clock_t current_cpu_t= clock();  // cpu clock ticks since program began
@@ -962,23 +963,23 @@ struct Meander : Module
 			else
 				durationFactor=0.95;
 
-					
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BAR_OUTPUT)
+			auto conn = theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port;
+			if (conn==OUT_CLOCK_BAR_OUTPUT)
 				durationFactor*=1.0;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEAT_OUTPUT)
+			if (conn==OUT_CLOCK_BEAT_OUTPUT)
 				durationFactor*=.25;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX2_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX2_OUTPUT)
 				durationFactor*=.125;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX4_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX4_OUTPUT)
 				durationFactor*=.0625;	
 			else
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX8_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX8_OUTPUT)
 				durationFactor*=.03125;	
 			else
-			if ( inputs[IN_PROG_STEP_EXT_CV].isConnected()) // something is connected to the circle STEP input but we do not know what. Assume it is an 16X BPM frequency
+			if (conn) // something is connected to the circle STEP input but we do not know what. Assume it is an 16X BPM frequency
 		  		durationFactor *= .01562;  
 			
 						
@@ -1040,7 +1041,7 @@ struct Meander : Module
 
 	void doMelody()
 	{
-		
+		theMeanderState.updateDisplay = true;	
 		outputs[OUT_MELODY_VOLUME_OUTPUT].setVoltage(theMeanderState.theMelodyParms.volume);
 		clock_t current_cpu_t= clock();  // cpu clock ticks since program began
 		double current_cpu_time_double= (double)(current_cpu_t) / (double)CLOCKS_PER_SEC;
@@ -1142,6 +1143,7 @@ struct Meander : Module
 
 	void doArp() 
 	{
+		theMeanderState.updateDisplay = true;
 		if (theMeanderState.theArpParms.note_count>=theMeanderState.theArpParms.count)
 	  		return;
 
@@ -1281,7 +1283,7 @@ struct Meander : Module
 
 	void doBass()
 	{
-	
+		theMeanderState.updateDisplay = true;
 	    outputs[OUT_BASS_VOLUME_OUTPUT].setVoltage(theMeanderState.theBassParms.volume);
 				
 		if (theMeanderState.theBassParms.enabled) 
@@ -1344,22 +1346,23 @@ struct Meander : Module
 			else
 				durationFactor=0.95;
 			
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BAR_OUTPUT)
+			auto conn = theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port;
+			if (conn==OUT_CLOCK_BAR_OUTPUT)
 				durationFactor*=1.0;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEAT_OUTPUT)
+			if (conn==OUT_CLOCK_BEAT_OUTPUT)
 				durationFactor*=.25;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX2_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX2_OUTPUT)
 				durationFactor*=.125;
 			else	
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX4_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX4_OUTPUT)
 				durationFactor*=.0625;	
 			else
-			if (theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port==OUT_CLOCK_BEATX8_OUTPUT)
+			if (conn==OUT_CLOCK_BEATX8_OUTPUT)
 				durationFactor*=.03125;	
 			else
-			if ( inputs[IN_PROG_STEP_EXT_CV].isConnected()) // something is connected to the circle STEP input but we do not know what. Assume it is an 16X BPM frequency
+			if (conn) // something is connected to the circle STEP input but we do not know what. Assume it is an 16X BPM frequency
 		  		durationFactor *= .01562;  
 			
 			float note_duration=durationFactor*time_sig_top/(frequency*theMeanderState.theBassParms.note_length_divisor);
@@ -1515,46 +1518,46 @@ struct Meander : Module
 	int lastPlayedScaleDegree=1;
 	int lastPlayedScaleOctave=0;
 	
-	void onRandomize(const RandomizeEvent& e) override {
-		for (int i=0; i<NUM_PARAMS; ++i) 
-		{
-			if (getParamQuantity(i)->randomizeEnabled)
-			{
-				if  (i==CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM)
-				{
-					getParamQuantity(i)->randomize(); // this should do a setValue() for knob param
-					float fvalue=params[CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM].getValue();
-					int ivalue=(int)fvalue;
-					ivalue=pow(2,ivalue);
-				    theMeanderState.theMelodyParms.note_length_divisor=ivalue;  
-				}
-				else
-				if (i==CONTROL_ARP_COUNT_PARAM) 
-				{
-					// need to do CONTROL_ARP_INCREMENT_PARAM first
-					theMeanderState.theArpParms.note_length_divisor = (theMeanderState.theMelodyParms.note_length_divisor*4);
-					theMeanderState.theArpParms.note_length_divisor = clamp(theMeanderState.theArpParms.note_length_divisor, 1, 32);
-					int exp=(int)log2((float)theMeanderState.theArpParms.note_length_divisor);
-					int newValue=(int)exp;
-					params[CONTROL_ARP_INCREMENT_PARAM].setValue(newValue);
+	// void onRandomize(const RandomizeEvent& e) override {
+	// 	for (int i=0; i<NUM_PARAMS; ++i) 
+	// 	{
+	// 		if (getParamQuantity(i)->randomizeEnabled)
+	// 		{
+	// 			if  (i==CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM)
+	// 			{
+	// 				getParamQuantity(i)->randomize(); // this should do a setValue() for knob param
+	// 				float fvalue=params[CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM].getValue();
+	// 				int ivalue=(int)fvalue;
+	// 				ivalue=pow(2,ivalue);
+	// 			    theMeanderState.theMelodyParms.note_length_divisor=ivalue;  
+	// 			}
+	// 			else
+	// 			if (i==CONTROL_ARP_COUNT_PARAM) 
+	// 			{
+	// 				// need to do CONTROL_ARP_INCREMENT_PARAM first
+	// 				theMeanderState.theArpParms.note_length_divisor = (theMeanderState.theMelodyParms.note_length_divisor*4);
+	// 				theMeanderState.theArpParms.note_length_divisor = clamp(theMeanderState.theArpParms.note_length_divisor, 1, 32);
+	// 				int exp=(int)log2((float)theMeanderState.theArpParms.note_length_divisor);
+	// 				int newValue=(int)exp;
+	// 				params[CONTROL_ARP_INCREMENT_PARAM].setValue(newValue);
 			
-					//*********  now we cam do CONTROL_ARP_COUNT_PARAM
+	// 				//*********  now we cam do CONTROL_ARP_COUNT_PARAM
 
-				    theMeanderState.theArpParms.count = (theMeanderState.theArpParms.note_length_divisor/theMeanderState.theMelodyParms.note_length_divisor)-1;
-					params[CONTROL_ARP_COUNT_PARAM].setValue((float)theMeanderState.theArpParms.count);
-				}
-				else
-				if (i==CONTROL_ARP_INCREMENT_PARAM)
-				{
-				  // actually done in i==CONTROL_ARP_COUNT_PARAM
-				}
-				else
-					getParamQuantity(i)->randomize();
-			}
-		}
-		// Call super method if you wish to include default behavior
-	    // Module::onRandomize(e);
-	}
+	// 			    theMeanderState.theArpParms.count = (theMeanderState.theArpParms.note_length_divisor/theMeanderState.theMelodyParms.note_length_divisor)-1;
+	// 				params[CONTROL_ARP_COUNT_PARAM].setValue((float)theMeanderState.theArpParms.count);
+	// 			}
+	// 			else
+	// 			if (i==CONTROL_ARP_INCREMENT_PARAM)
+	// 			{
+	// 			  // actually done in i==CONTROL_ARP_COUNT_PARAM
+	// 			}
+	// 			else
+	// 				getParamQuantity(i)->randomize();
+	// 		}
+	// 	}
+	// 	// Call super method if you wish to include default behavior
+	//     // Module::onRandomize(e);
+	// }
 
     // save button states
 	json_t *dataToJson() override {
@@ -2064,6 +2067,7 @@ struct Meander : Module
 			}
 			theMeanderState.theHarmonyParms.pending_step_edit=0;
 			runPulse.trigger(0.01f); // delay 10ms
+			theMeanderState.updateDisplay = true;
 		}
 		lights[LIGHT_LEDBUTTON_RUN].setBrightness(running ? 1.0f : 0.0f); 
 		run_pulse = runPulse.process(1.0 / args.sampleRate);  
@@ -2204,7 +2208,8 @@ struct Meander : Module
 				if (theMeanderState.theBassParms.enabled)
 					doBass();
 			}
-		
+			else
+				theMeanderState.updateDisplay = true;
 		}
 
 		stepLight -= stepLight / lightLambda / args.sampleRate;
@@ -5150,28 +5155,6 @@ struct Meander : Module
 	
 };  // end of struct Meander
 
-struct MinMaxQuantity : Quantity {
-	float *contrast = NULL;
-	std::string label = "Contrast";
-
-	MinMaxQuantity(float *_contrast, std::string _label) {
-		contrast = _contrast;
-		label = _label;
-	}
-	void setValue(float value) override {
-		*contrast = math::clamp(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return *contrast;
-	}
-
-	float getMinValue() override { return 0.50f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override {return Meander_panelContrastDefault;}
-	std::string getLabel() override { return label; }
-	std::string getUnit() override { return " "; }
-};    
-
 
 struct MeanderPanelThemeItem : MenuItem {    
     
@@ -5189,14 +5172,6 @@ struct MeanderPanelThemeItem : MenuItem {
     
 	};
 
-struct MinMaxSliderItem : ui::Slider {
-		MinMaxSliderItem(float *value, std::string label) {
-			quantity = new MinMaxQuantity(value, label);
-		}
-		~MinMaxSliderItem() {
-			delete quantity;
-		}
-    };
 
 struct MeanderScaleOutModeItem : MenuItem {   
     
@@ -5250,13 +5225,14 @@ struct MeanderDegreeOutRangeItem : MenuItem {
 
 	
  
-struct MeanderRootKeySelectLineDisplay : LightWidget {
+struct MeanderRootKeySelectLineDisplay : TransparentWidget {
 
 	Meander *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	MeanderRootKeySelectLineDisplay() {
-	
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	} 
 
 	void draw(const DrawArgs &args) override {
@@ -5264,7 +5240,7 @@ struct MeanderRootKeySelectLineDisplay : LightWidget {
 		if (!module)
 			return; 
 		
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
 							
 		Vec textpos = Vec(19,11); 
 		
@@ -5287,22 +5263,23 @@ struct MeanderRootKeySelectLineDisplay : LightWidget {
 		nvgFillColor(args.vg, Meander_paramTextColor);
 		nvgStrokeWidth(args.vg, 3.0);
 
-		char text[128];
-		snprintf(text, sizeof(text), "%s", Meander_root_key_names[*val]);
-		nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+		// char text[128];
+		// snprintf(text, sizeof(text), "%s", Meander_root_key_names[*val]);
+		nvgText(args.vg, textpos.x, textpos.y, Meander_root_key_names[*val], NULL);
 			
-		nvgClosePath(args.vg);
+		// nvgClosePath(args.vg);
 	}
 
 };
 
-struct MeanderScaleSelectLineDisplay : LightWidget {
+struct MeanderScaleSelectLineDisplay : TransparentWidget {
 
    	Meander *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	MeanderScaleSelectLineDisplay() {
-    
+	    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	}
 
 	void draw(const DrawArgs &args) override { 
@@ -5310,7 +5287,7 @@ struct MeanderScaleSelectLineDisplay : LightWidget {
         if (!module)
 			return;
 
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
 			
 		Vec textpos = Vec(68,12); 
 						
@@ -5336,15 +5313,15 @@ struct MeanderScaleSelectLineDisplay : LightWidget {
 	
 		if (module)  
 		{
-			char text[128];
+			char text[128] = {0};
 			
-			snprintf(text, sizeof(text), "%s", Meander_mode_names[*val]);
-			nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", Meander_mode_names[*val]);
+			nvgText(args.vg, textpos.x, textpos.y, Meander_mode_names[*val], NULL);
 
 			// add on the scale notes display out of this box
 			nvgFontSize(args.vg, 16);
 			nvgFillColor(args.vg, Meander_panelTextColor);
-			strcpy(text,"");
+			// strcpy(text,"");
 			for (int i=0;i<Meander_mode_step_intervals[*val][0];++i)
 			{
 				strcat(text,module->note_desig[module->notes[i]%MAX_NOTES]);  
@@ -5356,20 +5333,20 @@ struct MeanderScaleSelectLineDisplay : LightWidget {
 			strcpy(module->MeanderScaleText, text);  // save for module instance use
 	   	}
 		
-		nvgClosePath(args.vg);	
+		// nvgClosePath(args.vg);	
 	} 
 
 };
 
 ////////////////////////////////////
-struct MeanderBpmDisplayWidget : LightWidget {
+struct MeanderBpmDisplayWidget : TransparentWidget {
 
   Meander *module=NULL;	
   float *val = NULL;
-
+  std::shared_ptr<Font> font;
  
   MeanderBpmDisplayWidget() {
- 
+	  font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG7ClassicMini-Bold.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
@@ -5377,7 +5354,7 @@ struct MeanderBpmDisplayWidget : LightWidget {
 	if (!module)
 		return;
 
-	std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font, 7-segment display mini bold
+	// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font, 7-segment display mini bold
 		
 	// Background
 	NVGcolor backgroundColor = nvgRGB(0x20, 0x10, 0x10);
@@ -5422,17 +5399,18 @@ struct MeanderBpmDisplayWidget : LightWidget {
   }
 };
 //////////////////////////////////// 
-struct MeanderSigDisplayWidget : LightWidget {
+struct MeanderSigDisplayWidget : TransparentWidget {
 
   int *value = NULL;
+  std::shared_ptr<Font> font;
   
   MeanderSigDisplayWidget() {
-        
+    font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/DSEG7ClassicMini-Bold.ttf"));
   };
 
   void draw(const DrawArgs &args) override {
 
-	std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font: , 7-segment display mini bold
+	// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/DSEG7ClassicMini-Bold.ttf"));  // load a Rack font: , 7-segment display mini bold
 
 	// Display Background is now drawn on the svg panel, even if Module is null (value=null)
     NVGcolor backgroundColor = nvgRGB(0x20, 0x10, 0x10);
@@ -5477,8 +5455,8 @@ struct MeanderSigDisplayWidget : LightWidget {
  
 struct MeanderWidget : ModuleWidget  
 {
-	SvgPanel* svgPanel;
-	SvgPanel* darkPanel;
+	// SvgPanel* svgPanel;
+	// SvgPanel* darkPanel;
 	
 	rack::math::Rect  ParameterRect[MAX_PARAMS];  // warning, don't exceed the dimension
     rack::math::Rect  InportRect[MAX_INPORTS];  // warning, don't exceed the dimension
@@ -5496,10 +5474,15 @@ struct MeanderWidget : ModuleWidget
 		rack::math::Rect*  ParameterRectLocal;   // warning, don't exceed the dimension
 		rack::math::Rect*  InportRectLocal; 	 // warning, don't exceed the dimension
 		rack::math::Rect*  OutportRectLocal;     // warning, don't exceed the dimension
+		std::shared_ptr<Font> textfont;
+		std::shared_ptr<Font> musicfont;
 			
 		CircleOf5thsDisplay(Meander* module)  
 		{
 		   	this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
+		   	textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+		   	musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+		   	canSquash = true;
 		}
  
 		void DrawCircle5ths(const DrawArgs &args, int root_key) 
@@ -5507,7 +5490,7 @@ struct MeanderWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 			for (int i=0; i<MAX_CIRCLE_STATIONS; ++i)
 			{
@@ -5540,7 +5523,7 @@ struct MeanderWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 12);
@@ -5548,11 +5531,11 @@ struct MeanderWidget : ModuleWidget
 					nvgFontFaceId(args.vg, textfont->handle);	
 					nvgTextLetterSpacing(args.vg, -1);
 					nvgFillColor(args.vg, Meander_panelTextColor);
-					char text[32];
-					snprintf(text, sizeof(text), "%s", Meander_CircleNoteNames[i]);
+					// char text[32];
+					// snprintf(text, sizeof(text), "%s", Meander_CircleNoteNames[i]);
 					Vec TextPosition=module->theCircleOf5ths.CircleCenter.plus(module->theCircleOf5ths.Circle5ths[i].radialDirection.mult(module->theCircleOf5ths.MiddleCircleRadius*.93f));
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-					nvgText(args.vg, TextPosition.x, TextPosition.y, text, NULL);
+					nvgText(args.vg, TextPosition.x, TextPosition.y, Meander_CircleNoteNames[i], NULL);
 
 			}		
 		};
@@ -5562,7 +5545,7 @@ struct MeanderWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			int chord_type=0; 
 
@@ -5587,7 +5570,7 @@ struct MeanderWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 10);
@@ -5612,10 +5595,10 @@ struct MeanderWidget : ModuleWidget
 					if (i==6) // draw diminished
 					{
 						Vec TextPositionBdim=Vec(TextPosition.x+9, TextPosition.y-4);
-						snprintf(text, sizeof(text), "o");
+						// snprintf(text, sizeof(text), "o");
 						nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 						nvgFontSize(args.vg, 8);
-						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, text, NULL);
+						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, "o", NULL);
 					}
 
 			}	
@@ -5638,12 +5621,12 @@ struct MeanderWidget : ModuleWidget
 			
 			char text[128];
 
-			snprintf(text, sizeof(text), "%s", label);
+			// snprintf(text, sizeof(text), "%s", label);
 			nvgFillColor(args.vg, textColor);
 				
 			nvgFontSize(args.vg, fontSize);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
-			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, text, NULL);
+			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, label, NULL);
 
 			nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 			nvgFill(args.vg);
@@ -5675,12 +5658,12 @@ struct MeanderWidget : ModuleWidget
 			
 			char text[128];
 
-			snprintf(text, sizeof(text), "%s", label);
+			// snprintf(text, sizeof(text), "%s", label);
 			nvgFillColor(args.vg, textColor);
 				
 			nvgFontSize(args.vg, fontSize);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
-			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, text, NULL);
+			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, label, NULL);
 
 			nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 			nvgFill(args.vg);
@@ -5713,11 +5696,11 @@ struct MeanderWidget : ModuleWidget
 			
 			char text[128];
 
-			snprintf(text, sizeof(text), "%s", label);
+			// snprintf(text, sizeof(text), "%s", label);
 			nvgFillColor(args.vg, textColor);
 			nvgFontSize(args.vg, fontSize);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
-			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, text, NULL);
+			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, label, NULL);
 
 			nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 			nvgFill(args.vg);
@@ -5749,11 +5732,11 @@ struct MeanderWidget : ModuleWidget
 			
 			char text[128];
 
-			snprintf(text, sizeof(text), "%s", label);
+			// snprintf(text, sizeof(text), "%s", label);
 			nvgFillColor(args.vg, textColor);
 			nvgFontSize(args.vg, 14);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
-			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, text, NULL);
+			nvgText(args.vg, paramControlPos.x+20, paramControlPos.y+10, label, NULL);
 
 			nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 			nvgFill(args.vg);
@@ -5777,7 +5760,7 @@ struct MeanderWidget : ModuleWidget
 
 		void drawLabelAbove(const DrawArgs &args, Rect rect, const char* label, float fontSize)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, Meander_panelTextColor);
@@ -5791,7 +5774,7 @@ struct MeanderWidget : ModuleWidget
 
 		void drawLabelRight(const DrawArgs &args, Rect rect, const char* label)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, Meander_panelTextColor);
@@ -5805,7 +5788,7 @@ struct MeanderWidget : ModuleWidget
 
 		void drawLabelLeft(const DrawArgs &args, Rect rect, const char* label, float xoffset)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, Meander_panelTextColor);
@@ -5819,7 +5802,7 @@ struct MeanderWidget : ModuleWidget
 
 		void drawLabelOffset(const DrawArgs &args, Rect rect, const char* label, float xoffset, float yoffset, int fontsize=14)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, Meander_panelTextColor);
@@ -5834,7 +5817,7 @@ struct MeanderWidget : ModuleWidget
 
 		void drawOutport(const DrawArgs &args, Vec OutportPos, const char* label, float value, int valueDecimalPoints, float scale=1.0)  // scale is vertical only
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			Vec displayRectPos= OutportPos.plus(Vec(-3, -scale*15));  // specific for 30x43 size
 			nvgBeginPath(args.vg);
@@ -6037,7 +6020,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, (begintopEdge+whiteKeyLength));//2
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, begintopEdge);//3
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -6062,7 +6045,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//5
-					nvgClosePath(args.vg); //6
+					// nvgClosePath(args.vg); //6
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -6086,7 +6069,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge+whiteKeyLength);//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//6
-					nvgClosePath(args.vg);  //6
+					// nvgClosePath(args.vg);  //6
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -6118,7 +6101,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//6
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//7
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge1, begintopEdge);//8
-					nvgClosePath(args.vg);  //8
+					// nvgClosePath(args.vg);  //8
 										
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					
@@ -6143,7 +6126,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, (begintopEdge+blackKeyLength)); //2
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, begintopEdge);  //3
 					nvgMoveTo(args.vg, blackKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -6281,7 +6264,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, (begintopEdge+whiteKeyLength));//2
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, begintopEdge);//3
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -6306,7 +6289,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//5
-					nvgClosePath(args.vg); //6
+					// nvgClosePath(args.vg); //6
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -6330,7 +6313,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge+whiteKeyLength);//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//6
-					nvgClosePath(args.vg);  //6
+					// nvgClosePath(args.vg);  //6
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -6362,7 +6345,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//6
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//7
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge1, begintopEdge);//8
-					nvgClosePath(args.vg);  //8
+					// nvgClosePath(args.vg);  //8
 										
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					
@@ -6387,7 +6370,7 @@ struct MeanderWidget : ModuleWidget
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, (begintopEdge+blackKeyLength)); //2
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, begintopEdge);  //3
 					nvgMoveTo(args.vg, blackKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -6419,12 +6402,13 @@ struct MeanderWidget : ModuleWidget
 
 			if(module->randEnqueued)
 			{
-				APP->engine->randomizeModule(module);
+				// APP->engine->randomizeModule(module);
+				getAncestorOfType<ModuleWidget>()->randomize();
 				module->randEnqueued=false;
 			}
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
-			std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
 
 						    	
 			if (true)  // Harmony  position a paramwidget  can't access paramWidgets here  
@@ -6450,13 +6434,9 @@ struct MeanderWidget : ModuleWidget
 				nvgStrokeWidth(args.vg, 2.0); 
 
 				// draw set steps text 
+				drawLabelAbove(args, ParameterRectLocal[Meander::BUTTON_HARMONY_SETSTEP_1_PARAM+0], "Set Step", 15.);  
 				for(int i = 0; i<MAX_STEPS;++i) 
 				{
-					if (i==0)
-					{
-						snprintf(labeltext, sizeof(labeltext), "Set Step");
-						drawLabelAbove(args, ParameterRectLocal[Meander::BUTTON_HARMONY_SETSTEP_1_PARAM+i], labeltext, 15.);  
-					}
 					snprintf(labeltext, sizeof(labeltext), "%d", i+1);
 					drawLabelLeft(args,ParameterRectLocal[Meander::BUTTON_HARMONY_SETSTEP_1_PARAM+i], labeltext, 0.);  
 				}
@@ -6468,50 +6448,50 @@ struct MeanderWidget : ModuleWidget
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x00 , 0x00, 0x80));
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "Harmony Chords Enable");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_PARAM].pos, labeltext, 0, -1, Meander_panelHarmonyPartColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Harmony Chords Enable");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_PARAM].pos, "Harmony Chords Enable", 0, -1, Meander_panelHarmonyPartColor);
 				
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_VOLUME_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.volume, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_VOLUME_PARAM].pos, "Volume (0-10.0)", module->theMeanderState.theHarmonyParms.volume, 1, Meander_panelTextColor);
 						    
 				snprintf(labeltext, sizeof(labeltext), "Steps (%d-%d)", module->theActiveHarmonyType.min_steps, module->theActiveHarmonyType.max_steps);
 				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_STEPS_PARAM].pos, labeltext, (float)module->theActiveHarmonyType.num_harmony_steps, 0, Meander_panelTextColor);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_TARGETOCTAVE_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.target_octave, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_TARGETOCTAVE_PARAM].pos, "Target Oct.(1-7)", module->theMeanderState.theHarmonyParms.target_octave, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_ALPHA_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.alpha, 2, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_ALPHA_PARAM].pos, "Variability (0-1)", module->theMeanderState.theHarmonyParms.alpha, 2, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_RANGE_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.note_octave_range, 2, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_RANGE_PARAM].pos, "+-Octave Range (0-3)", module->theMeanderState.theHarmonyParms.note_octave_range, 2, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Notes on                    1/");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_DIVISOR_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.note_length_divisor, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Notes on                    1/");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_DIVISOR_PARAM].pos, "Notes on                    1/", module->theMeanderState.theHarmonyParms.note_length_divisor, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "~Nice 7ths");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "~Nice 7ths");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM].pos, "~Nice 7ths", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "V 7ths");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_V7THS_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "V 7ths");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_V7THS_PARAM].pos, "V 7ths", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "4-Voice Octaves");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "4-Voice Octaves");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM].pos, "4-Voice Octaves", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_STACCATO_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_STACCATO_PARAM].pos, "Staccato", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Tonic ch1");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Tonic ch1");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM].pos, "Tonic ch1", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Bass  ch1");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Bass  ch1");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM].pos, "Bass  ch1", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Progression Presets");
-				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONYPRESETS_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Progression Presets");
+				drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONYPRESETS_PARAM].pos, "Progression Presets", 0, -1, Meander_panelTextColor);
 			
 				//  do the progression displays
 				pos =ParameterRectLocal[Meander::CONTROL_HARMONYPRESETS_PARAM].pos.plus(Vec(-20,45));
@@ -6524,7 +6504,7 @@ struct MeanderWidget : ModuleWidget
 				nvgFill(args.vg);
 				nvgStroke(args.vg);
 		
-				nvgBeginPath(args.vg);
+				// nvgBeginPath(args.vg);
 				nvgFontSize(args.vg, 14);
 				if (textfont)
 				nvgFontFaceId(args.vg, textfont->handle);
@@ -6545,11 +6525,11 @@ struct MeanderWidget : ModuleWidget
 				nvgStroke(args.vg);
 
 		
-				nvgBeginPath(args.vg);
+				// nvgBeginPath(args.vg);
 				nvgFontSize(args.vg, 12);
 				nvgFillColor(args.vg, Meander_paramTextColor);
-				snprintf(text, sizeof(text), "%s           ",  module->theActiveHarmonyType.harmony_degrees_desc);
-				nvgText(args.vg, pos.x+5, pos.y+10, text, NULL);
+				// snprintf(text, sizeof(text), "%s           ",  module->theActiveHarmonyType.harmony_degrees_desc);
+				nvgText(args.vg, pos.x+5, pos.y+10, module->theActiveHarmonyType.harmony_degrees_desc, NULL);
 										
 			}
 
@@ -6580,47 +6560,47 @@ struct MeanderWidget : ModuleWidget
 
 				// update melody panel begin
 
-				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
+				// nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "Melody Enable");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos, labeltext, 0, -1, Meander_panelMelodyPartColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Melody Enable");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos, "Melody Enable", 0, -1, Meander_panelMelodyPartColor);
 
-				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
+				// nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 
 			    nvgFontSize(args.vg, 10);
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/DEG (1-7)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos.plus(Vec(92,-8)), labeltext, 0, -1, Meander_panelTextColor, 10);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/DEG (1-7)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos.plus(Vec(92,-8)), "1V/DEG (1-7)", 0, -1, Meander_panelTextColor, 10);
 				nvgFontSize(args.vg, 17);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "GATE");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos.plus(Vec(92,6)), labeltext, 0, -1, Meander_panelTextColor, 10);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "GATE");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_PARAM].pos.plus(Vec(92,6)), "GATE", 0, -1, Meander_panelTextColor, 10);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Chordal");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_CHORDAL_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Chordal");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_CHORDAL_PARAM].pos, "Chordal", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Scaler");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_SCALER_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Scaler");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_SCALER_PARAM].pos, "Scaler", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_VOLUME_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.volume, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10.0)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_VOLUME_PARAM].pos, "Volume (0-10.0)", module->theMeanderState.theMelodyParms.volume, 1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Hold tied");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_MELODY_DESTUTTER_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Hold tied");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_MELODY_DESTUTTER_PARAM].pos, "Hold tied", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Notes on               1/");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.note_length_divisor, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Notes on               1/");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_NOTE_LENGTH_DIVISOR_PARAM].pos, "Notes on               1/", module->theMeanderState.theMelodyParms.note_length_divisor, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_TARGETOCTAVE_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.target_octave, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_TARGETOCTAVE_PARAM].pos, "Target Oct.(1-7)", module->theMeanderState.theMelodyParms.target_octave, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_ALPHA_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.alpha, 2, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Variability (0-1)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_ALPHA_PARAM].pos, "Variability (0-1)", module->theMeanderState.theMelodyParms.alpha, 2, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_RANGE_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.note_octave_range, 2, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "+-Octave Range (0-3)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_RANGE_PARAM].pos, "+-Octave Range (0-3)", module->theMeanderState.theMelodyParms.note_octave_range, 2, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_STACCATO_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_MELODY_STACCATO_PARAM].pos, "Staccato", 0, -1, Meander_panelTextColor);
 
 				// draw division line
 				pos = ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_PARAM].pos.plus(Vec(-20,-2));
@@ -6634,34 +6614,34 @@ struct MeanderWidget : ModuleWidget
 				//
 				nvgStrokeColor(args.vg,nvgRGBA( 0x00,  0x00 , 0x80, 0x80));
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Arp Enable");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_PARAM].pos, labeltext, 0, -1, Meander_panelArpPartColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Arp Enable");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_PARAM].pos, "Arp Enable", 0, -1, Meander_panelArpPartColor);
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Count (0-31)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_COUNT_PARAM].pos, labeltext, module->theMeanderState.theArpParms.count, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Count (0-31)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_COUNT_PARAM].pos, "Count (0-31)", module->theMeanderState.theArpParms.count, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Notes on               1/");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_INCREMENT_PARAM].pos, labeltext, module->theMeanderState.theArpParms.note_length_divisor, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Notes on               1/");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_INCREMENT_PARAM].pos, "Notes on               1/", module->theMeanderState.theArpParms.note_length_divisor, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Decay (0-1.0)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_DECAY_PARAM].pos, labeltext, module->theMeanderState.theArpParms.decay, 2, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Decay (0-1.0)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_DECAY_PARAM].pos, "Decay (0-1.0)", module->theMeanderState.theArpParms.decay, 2, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Chordal");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_CHORDAL_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Chordal");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_CHORDAL_PARAM].pos, "Chordal", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Scaler");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_SCALER_PARAM].pos, labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Scaler");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_ARP_SCALER_PARAM].pos, "Scaler", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Pattern(-3-+3)");
-				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_PATTERN_PARAM].pos, labeltext, module->theMeanderState.theArpParms.pattern, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Pattern(-3-+3)");
+				drawMelodyControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_PATTERN_PARAM].pos, "Pattern(-3-+3)", module->theMeanderState.theArpParms.pattern, -1, Meander_panelTextColor);
 
 				pos =ParameterRectLocal[Meander::CONTROL_ARP_PATTERN_PARAM].pos.plus(Vec(102,0));
 							
 				nvgBeginPath(args.vg);
 
-				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
+				// nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 				nvgFillColor(args.vg, nvgRGBA( 0x2f,  0x27, 0x0a, 0xff));
 				nvgRoundedRect(args.vg, pos.x-18.0,pos.y, 76.f, 20.f, 4.f);
 				nvgStrokeWidth(args.vg, 2.0);
@@ -6690,7 +6670,7 @@ struct MeanderWidget : ModuleWidget
 				if (module->theMeanderState.theArpParms.pattern==-3)
 					snprintf(text, sizeof(text), "%d: DNx2", module->theMeanderState.theArpParms.pattern);
 				else
-					snprintf(text, sizeof(text), "%s", "      ");  // since text is used above, needs to be cleared in fallthrough case
+					snprintf(text, sizeof(text), "%s", "");  // since text is used above, needs to be cleared in fallthrough case
 				
 				nvgText(args.vg, pos.x-10, pos.y+10, text, NULL);
 
@@ -6717,39 +6697,39 @@ struct MeanderWidget : ModuleWidget
 				nvgFontFaceId(args.vg, textfont->handle);
 				nvgTextLetterSpacing(args.vg, -1);
 				nvgFillColor(args.vg, Meander_panelTextColor);
-				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
+				// nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 				nvgStrokeWidth(args.vg, 2.0);
 				
 				nvgStrokeColor(args.vg,nvgRGBA( 0x00,  0x80 , 0x00, 0x80));
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "Bass Enable");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_BASS_PARAM].pos, labeltext, 0, -1, Meander_panelBassPartColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Bass Enable");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_BASS_PARAM].pos, "Bass Enable", 0, -1, Meander_panelBassPartColor);
 
 				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10)");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_VOLUME_PARAM].pos, labeltext, module->theMeanderState.theBassParms.volume, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume (0-10)");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_VOLUME_PARAM].pos, "Volume (0-10)", module->theMeanderState.theBassParms.volume, 1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_TARGETOCTAVE_PARAM].pos, labeltext, module->theMeanderState.theBassParms.target_octave, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Target Oct.(1-7)");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_TARGETOCTAVE_PARAM].pos, "Target Oct.(1-7)", module->theMeanderState.theBassParms.target_octave, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Notes on    1/");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_DIVISOR_PARAM].pos, labeltext, module->theMeanderState.theBassParms.note_length_divisor, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Notes on    1/");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_BASS_DIVISOR_PARAM].pos, "Notes on    1/", module->theMeanderState.theBassParms.note_length_divisor, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_BASS_STACCATO_PARAM].pos, labeltext, module->theMeanderState.theBassParms.enable_staccato, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Staccato");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_ENABLE_BASS_STACCATO_PARAM].pos, "Staccato", module->theMeanderState.theBassParms.enable_staccato, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Accent");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_ACCENT_PARAM].pos, labeltext, module->theMeanderState.theBassParms.accent, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Accent");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_ACCENT_PARAM].pos, "Accent", module->theMeanderState.theBassParms.accent, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Syncopate");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_SYNCOPATE_PARAM].pos, labeltext, module->theMeanderState.theBassParms.syncopate, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Syncopate");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_SYNCOPATE_PARAM].pos, "Syncopate", module->theMeanderState.theBassParms.syncopate, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Shuffle");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_SHUFFLE_PARAM].pos, labeltext, module->theMeanderState.theBassParms.shuffle, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Shuffle");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_SHUFFLE_PARAM].pos, "Shuffle", module->theMeanderState.theBassParms.shuffle, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Octaves");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_OCTAVES_PARAM].pos, labeltext, module->theMeanderState.theBassParms.octave_enabled, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Octaves");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::BUTTON_BASS_OCTAVES_PARAM].pos, "Octaves", module->theMeanderState.theBassParms.octave_enabled, -1, Meander_panelTextColor);
 			
 
 			}
@@ -6773,126 +6753,126 @@ struct MeanderWidget : ModuleWidget
 				nvgFontFaceId(args.vg, textfont->handle);
 				nvgTextLetterSpacing(args.vg, -1);
 				nvgFillColor(args.vg, nvgRGBA(0x0, 0x0, 0x0, 0xff));
-				nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
+				// nvgStrokeColor(args.vg,nvgRGBA( 0x80,  0x80 , 0x80, 0x80));
 				nvgStrokeWidth(args.vg, 2.0);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "fBm 1/f Noise");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos.plus(Vec(30,-25)), labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "fBm 1/f Noise");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos.plus(Vec(30,-25)), "fBm 1/f Noise", 0, -1, Meander_panelTextColor);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Harmony");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos.plus(Vec(37,-13)), labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Harmony");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos.plus(Vec(37,-13)), "Harmony", 0, -1, Meander_panelTextColor);
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.noctaves, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_OCTAVES_PARAM].pos, "Octaves (1-6)", module->theMeanderState.theHarmonyParms.noctaves, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_PERIOD_PARAM].pos, labeltext, module->theMeanderState.theHarmonyParms.period, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_HARMONY_FBM_PERIOD_PARAM].pos, "Period Sec. (1-100)", module->theMeanderState.theHarmonyParms.period, 1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Melody");
-				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_OCTAVES_PARAM].pos.plus(Vec(41,-13)), labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Melody");
+				drawBassControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_OCTAVES_PARAM].pos.plus(Vec(41,-13)), "Melody", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_OCTAVES_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.noctaves, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_OCTAVES_PARAM].pos, "Octaves (1-6)", module->theMeanderState.theMelodyParms.noctaves, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_PERIOD_PARAM].pos, labeltext, module->theMeanderState.theMelodyParms.period, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_MELODY_FBM_PERIOD_PARAM].pos, "Period Sec. (1-100)", module->theMeanderState.theMelodyParms.period, 1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "32nds");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_OCTAVES_PARAM].pos.plus(Vec(47,-13)), labeltext, 0, -1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "32nds");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_OCTAVES_PARAM].pos.plus(Vec(47,-13)), "32nds", 0, -1, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_OCTAVES_PARAM].pos, labeltext, module->theMeanderState.theArpParms.noctaves, 0, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Octaves (1-6)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_OCTAVES_PARAM].pos, "Octaves (1-6)", module->theMeanderState.theArpParms.noctaves, 0, Meander_panelTextColor);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
-				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_PERIOD_PARAM].pos, labeltext, module->theMeanderState.theArpParms.period, 1, Meander_panelTextColor);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Period Sec. (1-100)");
+				drawfBmControlParamLine(args,ParameterRectLocal[Meander::CONTROL_ARP_FBM_PERIOD_PARAM].pos, "Period Sec. (1-100)", module->theMeanderState.theArpParms.period, 1, Meander_panelTextColor);
 
 				
 			} 
 
 			if (true)  // draw rounded corner rects  for input jacks border 
 			{
-				char labeltext[128];
+				// char labeltext[128];
 							
 		
-				snprintf(labeltext, sizeof(labeltext), "%s", "RUN");
-				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RUN_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RUN");
+				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RUN_PARAM], "RUN", 12.);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_RUN_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[Meander::OUT_RUN_OUT].pos, "Out", 0, 1);
 				
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "RESET");
-				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RESET_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RESET");
+				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RESET_PARAM], "RESET", 12.);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "RAND");
-				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RAND_PARAM], labeltext, 12.);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "RAND");
+				drawLabelAbove(args,ParameterRectLocal[Meander::BUTTON_RAND_PARAM], "RAND", 12.);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_RESET_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[Meander::OUT_RESET_OUT].pos, "Out", 0, 1);
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "BPM");
-				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TEMPOBPM_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "BPM");
+				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TEMPOBPM_PARAM], "BPM");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Top");
-				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TIMESIGNATURETOP_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Top");
+				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TIMESIGNATURETOP_PARAM], "Time Sig Top");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Bottom");
-				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TIMESIGNATUREBOTTOM_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Time Sig Bottom");
+				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_TIMESIGNATUREBOTTOM_PARAM], "Time Sig Bottom");
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Root");
-				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_ROOT_KEY_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Root");
+				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_ROOT_KEY_PARAM], "Root");
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
-				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_SCALE_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
+				drawLabelRight(args,ParameterRectLocal[Meander::CONTROL_SCALE_PARAM], "Mode: bright->to darkest");
 
-			    snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
-				drawLabelOffset(args, InportRectLocal[Meander::IN_POLY_QUANT_EXT_CV], labeltext, -5., -29.);  
+			    // snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
+				drawLabelOffset(args, InportRectLocal[Meander::IN_POLY_QUANT_EXT_CV], "|-----Poly Quantizer-----|", -5., -29.);  
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "In");
-				drawLabelOffset(args, InportRectLocal[Meander::IN_POLY_QUANT_EXT_CV], labeltext, +2., -12.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "In");
+				drawLabelOffset(args, InportRectLocal[Meander::IN_POLY_QUANT_EXT_CV], "In", +2., -12.); 
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "8x BPM Clock");
-				drawLabelOffset(args, InportRectLocal[Meander::IN_CLOCK_EXT_CV], labeltext, -4., -26.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "8x BPM Clock");
+				drawLabelOffset(args, InportRectLocal[Meander::IN_CLOCK_EXT_CV], "8x BPM Clock", -4., -26.); 
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "In");
-				drawLabelOffset(args, InportRectLocal[Meander::IN_CLOCK_EXT_CV], labeltext, +2., -12.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "In");
+				drawLabelOffset(args, InportRectLocal[Meander::IN_CLOCK_EXT_CV], "In", +2., -12.); 
 													
 			}
 
 			if (true)  // draw rounded corner rects  for output jacks border 
 			{
-				char labeltext[128];
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
-				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_CV_OUTPUT].pos, labeltext, 0, 1);
+				// char labeltext[128];
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
+				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_CV_OUTPUT].pos, "1V/Oct", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
-				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_GATE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
+				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_GATE_OUTPUT].pos, "Gate", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
-				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_VOLUME_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
+				drawOutport(args, OutportRectLocal[Meander::OUT_HARMONY_VOLUME_OUTPUT].pos, "Volume", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
-				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_CV_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
+				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_CV_OUTPUT].pos, "1V/Oct", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
-				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_GATE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
+				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_GATE_OUTPUT].pos, "Gate", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
-				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_VOLUME_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
+				drawOutport(args, OutportRectLocal[Meander::OUT_MELODY_VOLUME_OUTPUT].pos, "Volume", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
-				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_CV_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
+				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_CV_OUTPUT].pos, "1V/Oct", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
-				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_GATE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
+				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_GATE_OUTPUT].pos, "Gate", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
-				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_VOLUME_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Volume");
+				drawOutport(args, OutportRectLocal[Meander::OUT_BASS_VOLUME_OUTPUT].pos, "Volume", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Melody");
-				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Melody");
+				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos, "Melody", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Outputs are 0-10V fBm noise");
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Outputs are 0-10V fBm noise");
 				nvgFillColor(args.vg, Meander_panelTextColor);
 				nvgFontSize(args.vg, 17);
 				if (textfont)
@@ -6902,59 +6882,59 @@ struct MeanderWidget : ModuleWidget
 				if (textfont)
 				nvgFontFaceId(args.vg, textfont->handle);
 				nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-			    nvgText(args.vg, OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos.x+13,  OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos.y-30, labeltext, NULL);
+			    nvgText(args.vg, OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos.x+13,  OutportRectLocal[Meander::OUT_FBM_MELODY_OUTPUT].pos.y-30, "Outputs are 0-10V fBm noise", NULL);
 				
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Harmony");
-				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_HARMONY_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Harmony");
+				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_HARMONY_OUTPUT].pos, "Harmony", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "32nds");
-				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_ARP_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "32nds");
+				drawOutport(args, OutportRectLocal[Meander::OUT_FBM_ARP_OUTPUT].pos, "32nds", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Bar");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BAR_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Bar");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BAR_OUTPUT].pos, "Bar", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beat");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEAT_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beat");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEAT_OUTPUT].pos, "Beat", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx2");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX2_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx2");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX2_OUTPUT].pos, "Beatx2", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "1ms Clocked Trigger Pulses");
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1ms Clocked Trigger Pulses");
 				rack::math::Rect rect=OutportRectLocal[Meander::OUT_CLOCK_BEATX2_OUTPUT];
 				rect.pos=rect.pos.plus(Vec(0,-16));
-				drawLabelAbove(args, rect, labeltext, 18.);
+				drawLabelAbove(args, rect, "1ms Clocked Trigger Pulses", 18.);
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx4");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX4_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx4");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX4_OUTPUT].pos, "Beatx4", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Beatx8");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX8_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Beatx8");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_BEATX8_OUTPUT].pos, "Beatx8", 0, 1);
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_ROOT_OUTPUT].pos, labeltext, 0, 1, 0.8);  // scale height by 0.8x
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_ROOT_OUTPUT].pos, "Out", 0, 1, 0.8);  // scale height by 0.8x
 
-                snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
-				drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., 7.0); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
-				drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +19.0); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
-				drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +31.0); 
+                // snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
+				// drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], "Poly", -26., 7.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
+				// drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], "Ext.->", -26., +19.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
+				// drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT], "Scale", -26., +31.0); 
 				
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				// drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_SCALE_OUTPUT].pos, "Out", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
-				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_QUANT_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
+				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_QUANT_OUTPUT].pos, "Quants", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
-				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
+				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, "Trigs", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_OUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[Meander::OUT_CLOCK_OUT].pos, "Out", 0, 1);
 						
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[Meander::OUT_EXT_SCALE_OUTPUT].pos, "Out", 0, 1);
            
 			}
 
@@ -6983,16 +6963,17 @@ struct MeanderWidget : ModuleWidget
             int num_flats1=0;
 
 			if (true) // draw the circle area treble clef scale
-			{
-			  
-	
+			{			  
+			  nvgStrokeColor(args.vg, Meander_panelLineColor);
+			  nvgStrokeWidth(args.vg, lineWidth);
+
 		      // draw bar left vertical edge
 			  if (beginEdge > 0) {
 			    	nvgBeginPath(args.vg);
 			    	nvgMoveTo(args.vg, beginEdge, beginTop+barLineVoffset);
 			    	nvgLineTo(args.vg, beginEdge, beginTop+barLineVlength);
-			    	nvgStrokeColor(args.vg, Meander_panelLineColor);
-			    	nvgStrokeWidth(args.vg, lineWidth);
+			    	// nvgStrokeColor(args.vg, Meander_panelLineColor);
+			    	// nvgStrokeWidth(args.vg, lineWidth);
 			    	nvgStroke(args.vg);
 		    	}
 		    	// draw staff lines
@@ -7001,8 +6982,8 @@ struct MeanderWidget : ModuleWidget
 				  nvgMoveTo(args.vg, beginEdge, beginTop+y);
 				  nvgLineTo(args.vg, beginEdge+stafflineLength, beginTop+y);
 			  }
-			  nvgStrokeColor(args.vg, Meander_panelLineColor);
-			  nvgStrokeWidth(args.vg, lineWidth);
+			  // nvgStrokeColor(args.vg, Meander_panelLineColor);
+			  // nvgStrokeWidth(args.vg, lineWidth);
 			  nvgStroke(args.vg); 
 
 			  nvgFontSize(args.vg, 90);
@@ -7011,44 +6992,44 @@ struct MeanderWidget : ModuleWidget
 			  nvgTextLetterSpacing(args.vg, -1);
 			  nvgFillColor(args.vg,Meander_panelLineColor);
 			  pos=Vec(beginEdge+12, beginTop+54); 
-			  snprintf(text, sizeof(text), "%s", Meander_gClef.c_str());  
-			  nvgText(args.vg, pos.x, pos.y, text, NULL);
+			  // snprintf(text, sizeof(text), "%s", Meander_gClef.c_str());  
+			  nvgText(args.vg, pos.x, pos.y, Meander_gClef.c_str(), NULL);
 			
 			  nvgFontSize(args.vg, 90);
 			  nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-			  snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
+			  // snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
 					      
 			  for (int i=0; i<7; ++i)
 			  {
-			    	nvgBeginPath(args.vg);
+			    	// nvgBeginPath(args.vg);
 			    	if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==1)
 				    {
 				      vertical_offset1=Meander_root_key_sharps_vertical_display_offset[num_sharps1];
 					  pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-					  nvgText(args.vg, pos.x, pos.y, text, NULL);
+					  nvgText(args.vg, pos.x, pos.y, Meander_sharp.c_str(), NULL);
 					  ++num_sharps1;
 				    }
-			  	  nvgClosePath(args.vg);
+			  	  // nvgClosePath(args.vg);
 			  }	
 		
-			  snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
+			  // snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
 			  vertical_offset1=0;
 			  for (int i=6; i>=0; --i)
 			  {
-			   	 nvgBeginPath(args.vg);
+			   	 // nvgBeginPath(args.vg);
 				  if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==-1)
 				  {
 				     vertical_offset1=Meander_root_key_flats_vertical_display_offset[num_flats1];
 				   	 pos=Vec(beginEdge+24+(num_flats1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-					 nvgText(args.vg, pos.x, pos.y, text, NULL);
+					 nvgText(args.vg, pos.x, pos.y, Meander_flat.c_str(), NULL);
 					 ++num_flats1;
 				  }
-				  nvgClosePath(args.vg);
+				  // nvgClosePath(args.vg);
 			  }	
 			}
 
 		
-			nvgFontSize(args.vg, 8);
+			nvgFontSize(args.vg, 10);
 			
 			if (textfont)
 			nvgFontFaceId(args.vg, textfont->handle);
@@ -7056,16 +7037,16 @@ struct MeanderWidget : ModuleWidget
 			nvgFillColor(args.vg, Meander_panelTextColor);
 
 			pos=Vec(beginEdge+0, beginTop+95);  
-			snprintf(text, sizeof(text), "%s", "In--");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "In--");
+			nvgText(args.vg, pos.x, pos.y, "In--", NULL);
 
 			pos=Vec(beginEdge+0, beginTop+115);  
-			snprintf(text, sizeof(text), "%s", "In--");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "In--");
+			nvgText(args.vg, pos.x, pos.y, "In--", NULL);
 
 			pos=Vec(beginEdge+46, beginTop+95);   
 
-			nvgFontSize(args.vg, 8);  // make it a bit smaller to fit and scale best
+			// nvgFontSize(args.vg, 8);  // make it a bit smaller to fit and scale best
 		
 		    if (module->harmonic_degree_out_mode == module->RANGE_1to7)
 				snprintf(text, sizeof(text), "%s", "(1-7)  1V/Deg  (1-7)");
@@ -7074,19 +7055,19 @@ struct MeanderWidget : ModuleWidget
 			nvgText(args.vg, pos.x, pos.y, text, NULL);
 			
 			pos=Vec(beginEdge+30, beginTop+115);  
-			snprintf(text, sizeof(text), "%s", "--Gate");
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", "--Gate");
+			nvgText(args.vg, pos.x, pos.y, "--Gate", NULL);
 
-			snprintf(text, sizeof(text), "%s", "Out");
-			drawOutport(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_OUTPUT].pos, text, 0, 1, 0.8);  // scale height by 0.8x);
+			// snprintf(text, sizeof(text), "%s", "Out");
+			drawOutport(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_OUTPUT].pos, "Out", 0, 1, 0.8);  // scale height by 0.8x);
 
-			snprintf(text, sizeof(text), "%s", "Chord Type--");
-			drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT], text, -31., +12.0, 8); 
-			snprintf(text, sizeof(text), "%s", "");
-			drawOutport(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT].pos, text, 0, 1, 0.8);  // scale height by 0.8x);
+			// snprintf(text, sizeof(text), "%s", "Chord Type--");
+			drawLabelOffset(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT], "Chord Type--", -31., +12.0, 9); 
+			// snprintf(text, sizeof(text), "%s", "");
+			drawOutport(args, OutportRectLocal[Meander::OUT_EXT_HARMONIC_DEGREE_CHORD_TYPE_OUTPUT].pos, "", 0, 1, 0.8);  // scale height by 0.8x);
 
-			snprintf(text, sizeof(text), "%s", "--Step");
-			drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_PROG_STEP_PARAM].pos.plus(Vec(0,-2)), text, 0, -1, Meander_panelTextColor, 8);
+			// snprintf(text, sizeof(text), "%s", "--Step");
+			drawHarmonyControlParamLine(args,ParameterRectLocal[Meander::BUTTON_PROG_STEP_PARAM].pos.plus(Vec(0,-2)), "--Step", 0, -1, Meander_panelTextColor, 10);
 
 			nvgFontSize(args.vg, 12);
 			
@@ -7096,11 +7077,11 @@ struct MeanderWidget : ModuleWidget
 			// display area 
 		
 			
-			snprintf(text, sizeof(text), "%s", "Display Keys");
-			drawLabelRight(args,ParameterRectLocal[Meander::BUTTON_ENABLE_KEYBOARD_RENDER_PARAM], text);
+			// snprintf(text, sizeof(text), "%s", "Display Keys");
+			drawLabelRight(args,ParameterRectLocal[Meander::BUTTON_ENABLE_KEYBOARD_RENDER_PARAM], "Display Keys");
 
-			snprintf(text, sizeof(text), "%s", "Display Score");
-			drawLabelRight(args,ParameterRectLocal[Meander::BUTTON_ENABLE_SCORE_RENDER_PARAM], text);
+			// snprintf(text, sizeof(text), "%s", "Display Score");
+			drawLabelRight(args,ParameterRectLocal[Meander::BUTTON_ENABLE_SCORE_RENDER_PARAM], "Display Score");
 
 			// draw staff lines
 			if (module->theMeanderState.renderScoreEnabled)
@@ -7115,14 +7096,17 @@ struct MeanderWidget : ModuleWidget
 				yLineSpacing=6;
 				yHalfLineSpacing=3.0f;
 				
+				nvgStrokeColor(args.vg, Meander_panelLineColor);
+				nvgStrokeWidth(args.vg, lineWidth);
+
 				// draw bar left vertical edge
 
 				if (beginEdge > 0) {
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, beginEdge, beginTop+barLineVoffset);
 					nvgLineTo(args.vg, beginEdge, beginTop+(1.60*barLineVlength));
-					nvgStrokeColor(args.vg, Meander_panelLineColor);
-					nvgStrokeWidth(args.vg, lineWidth);
+					// nvgStrokeColor(args.vg, Meander_panelLineColor);
+					// nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
 				}
 
@@ -7131,8 +7115,8 @@ struct MeanderWidget : ModuleWidget
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, beginEdge+stafflineLength, beginTop+barLineVoffset);
 					nvgLineTo(args.vg, beginEdge+stafflineLength, beginTop+(1.60*barLineVlength));
-					nvgStrokeColor(args.vg, Meander_panelLineColor);
-					nvgStrokeWidth(args.vg, lineWidth);
+					// nvgStrokeColor(args.vg, Meander_panelLineColor);
+					// nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
 				}
 				// draw staff lines
@@ -7145,8 +7129,8 @@ struct MeanderWidget : ModuleWidget
 					}
 				}  
 
-				nvgStrokeColor(args.vg, Meander_panelLineColor);
-				nvgStrokeWidth(args.vg, lineWidth);
+				// nvgStrokeColor(args.vg, Meander_panelLineColor);
+				// nvgStrokeWidth(args.vg, lineWidth);
 				nvgStroke(args.vg);
 
 				nvgFontSize(args.vg, 90);
@@ -7155,13 +7139,13 @@ struct MeanderWidget : ModuleWidget
 				nvgTextLetterSpacing(args.vg, -1);
 				nvgFillColor(args.vg, Meander_panelLineColor);
 				pos=Vec(beginEdge+3, beginTop+54);  
-				snprintf(text, sizeof(text), "%s", Meander_gClef.c_str());  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", Meander_gClef.c_str());  
+				nvgText(args.vg, pos.x, pos.y, Meander_gClef.c_str(), NULL);
 
 				nvgFontSize(args.vg, 90);
 				pos=Vec(beginEdge+3, beginTop+78.5); 
-				snprintf(text, sizeof(text), "%s", Meander_fClef.c_str());  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", Meander_fClef.c_str());  
+				nvgText(args.vg, pos.x, pos.y, Meander_fClef.c_str(), NULL);
 				
 				nvgFontSize(args.vg, 90);
 			
@@ -7374,74 +7358,74 @@ struct MeanderWidget : ModuleWidget
 				// do root_key signature
 				
 				nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-				snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
+				// snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
 				
 				num_sharps1=0;
 				vertical_offset1=0;
 				for (int i=0; i<7; ++i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==1)
 					{
 						vertical_offset1=Meander_root_key_sharps_vertical_display_offset[num_sharps1];
 						pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, Meander_sharp.c_str(), NULL);
 						++num_sharps1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 			
-				snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
+				// snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
 				num_flats1=0;
 				vertical_offset1=0;
 				for (int i=6; i>=0; --i)  
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==-1)
 					{
 						vertical_offset1=Meander_root_key_flats_vertical_display_offset[num_flats1];
 						pos=Vec(beginEdge+24+(num_flats1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, Meander_flat.c_str(), NULL);
 						++num_flats1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 
 				// now do for bass clef
 
 				nvgFontSize(args.vg, 90);
 				nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-				snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
+				// snprintf(text, sizeof(text), "%s", Meander_sharp.c_str());  
 				
 				num_sharps1=0;
 				vertical_offset1=0;
 				for (int i=0; i<7; ++i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==1)
 					{
 						vertical_offset1=Meander_root_key_sharps_vertical_display_offset[num_sharps1];
 						pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+75+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, Meander_sharp.c_str(), NULL);
 						++num_sharps1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 			
-				snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
+				// snprintf(text, sizeof(text), "%s", Meander_flat.c_str());  
 				num_flats1=0;
 				vertical_offset1=0;
 				for (int i=6; i>=0; --i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (Meander_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==-1)
 					{
 						vertical_offset1=Meander_root_key_flats_vertical_display_offset[num_flats1];
 						pos=Vec(beginEdge+24+(num_flats1*5), beginTop+75+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, Meander_flat.c_str(), NULL);
 						++num_flats1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 
 				// designate Middle C as C4
@@ -7452,8 +7436,8 @@ struct MeanderWidget : ModuleWidget
 				nvgFillColor(args.vg, Meander_panelTextColor);
 				float mid_C_position = 74.0;  // middle C
 				pos=Vec(beginEdge-12, mid_C_position);  
-				snprintf(text, sizeof(text), "%s", "C4");  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", "C4");  
+				nvgText(args.vg, pos.x, pos.y, "C4", NULL);
 						
 		
 				// draw notes on staves
@@ -7658,17 +7642,17 @@ struct MeanderWidget : ModuleWidget
 								ledgerPos.x += 0.25;
 
 							ledgerPos.y += 11.5;
-							snprintf(text, sizeof(text), "%s", Meander_staff1Line.c_str()); 
-							nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+							// snprintf(text, sizeof(text), "%s", Meander_staff1Line.c_str()); 
+							nvgText(args.vg, ledgerPos.x, ledgerPos.y, Meander_staff1Line.c_str(), NULL);
 							for (int j=onLineNumberAboveStaves; j>1; --j)
 							{
 								ledgerPos.y += 6.0;
-								nvgText(args.vg,ledgerPos.x, ledgerPos.y, text, NULL);
+								nvgText(args.vg,ledgerPos.x, ledgerPos.y, Meander_staff1Line.c_str(), NULL);
 							}
 							for (int j=onLineNumberBelowStaves; j>1; --j)
 							{
 								ledgerPos.y -= 6.0;
-								nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+								nvgText(args.vg, ledgerPos.x, ledgerPos.y, Meander_staff1Line.c_str(), NULL);
 							}
 						} 
 
@@ -7730,16 +7714,16 @@ struct MeanderWidget : ModuleWidget
 								else
 									ledgerPos.x += 0.25;
 
-								snprintf(text, sizeof(text), "%s", Meander_staff1Line.c_str()); 
+								// snprintf(text, sizeof(text), "%s", Meander_staff1Line.c_str()); 
 								for (int j=onSpaceNumberAboveStaves; j>=1; --j)
 								{
 									ledgerPos.y=55.5-(j*6.0);
-									nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+									nvgText(args.vg, ledgerPos.x, ledgerPos.y, Meander_staff1Line.c_str(), NULL);
 								}
 								for (int j=onSpaceNumberBelowStaves; j>=1; --j)
 								{
 									ledgerPos.y=115.70+(j*6.0);
-									nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+									nvgText(args.vg, ledgerPos.x, ledgerPos.y, Meander_staff1Line.c_str(), NULL);
 								}
 							}
 						} 
@@ -7783,9 +7767,9 @@ struct MeanderWidget : ModuleWidget
 			nvgTextLetterSpacing(args.vg, -1);
 			nvgTextAlign(args.vg,NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE);
 			nvgFillColor(args.vg, Meander_panelTextColor);
-			snprintf(text, sizeof(text), "%s", "Playing Notes---->");  
+			// snprintf(text, sizeof(text), "%s", "Playing Notes---->");  
 			pos=Vec(notesPlayingDisplayStartX-85, notesPlayingDisplayNoteCenterY);  
-			nvgText(args.vg, pos.x, pos.y, text, NULL);
+			nvgText(args.vg, pos.x, pos.y, "Playing Notes---->", NULL);
 		
 			nvgStrokeWidth(args.vg, 2.0);
 			nvgStrokeColor(args.vg, nvgRGBA( 0x00,  0x00, 0x00, 0xff));
@@ -7797,7 +7781,7 @@ struct MeanderWidget : ModuleWidget
 			nvgLineTo(args.vg, notesPlayingDisplayStartX, notesPlayingDisplayStartY);
 
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 
 			// draw vertical parts separator lines dark
 			nvgBeginPath(args.vg);
@@ -7813,7 +7797,7 @@ struct MeanderWidget : ModuleWidget
 			nvgLineTo(args.vg, notesPlayingDisplayStartX+((6*notesPlayingDisplayNoteWidth)), notesPlayingDisplayEndY);
 
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 
 			// draw vertical part notes separator lines light
 
@@ -7834,7 +7818,7 @@ struct MeanderWidget : ModuleWidget
 
 	
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 			
 			if (module->moduleVarsInitialized)  // globals fully initialized if Module!=NULL
 			{
@@ -7892,7 +7876,7 @@ struct MeanderWidget : ModuleWidget
 						if ((module->theMeanderState.theHarmonyParms.last_chord_type==2)||(module->theMeanderState.theHarmonyParms.last_chord_type==3)||(module->theMeanderState.theHarmonyParms.last_chord_type==4)||(module->theMeanderState.theHarmonyParms.last_chord_type==5))
 							snprintf(text, sizeof(text), "%s%d", module->note_desig[module->theMeanderState.theHarmonyParms.last[3].note%12], module->theMeanderState.theHarmonyParms.last[3].note/12);
 						else
-							snprintf(text, sizeof(text), "%s", "   ");
+							snprintf(text, sizeof(text), "%s", "");
 						nvgFillColor(args.vg, Meander_panelHarmonyPartColor); 
 						nvgText(args.vg, pos.x, pos.y, text, NULL);
 						nvgFillColor(args.vg, Meander_panelTextColor);
@@ -8211,53 +8195,16 @@ struct MeanderWidget : ModuleWidget
 		
 		void draw(const DrawArgs &args) override 
 		{   
-		 	if (!module)  // if there is no module, draw the static panel image, i.e., in the browser
-			{
-				nvgBeginPath(args.vg);
-				nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
-				
-				if (Meander_panelTheme==0)  // light theme
-				{
-					std::shared_ptr<Image> lightPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/Meander-light.png"));
-					if (lightPanelImage) 
-					{
-						int height=0;
-						int width=0;
-						nvgImageSize(args.vg, lightPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, lightPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-				else // dark theme
-				{
-					std::shared_ptr<Image> darkPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/Meander-dark.png"));
-					if (darkPanelImage) 
-					{
-						int height=0;
-				        int width=0;
-						nvgImageSize(args.vg, darkPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, darkPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-							
-				nvgClosePath(args.vg);
-			    Widget::draw(args);
-			    return;  // do not proceedurally draw panel 
-			}
-
 			if (true)  // false to disable most nanovg panel rendering for testing
 			{
 				         							
 				// draw Meander logo and chord legend
 				
-				std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+				// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 				if (textfont)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 			   		nvgFontSize(args.vg, 27);
 					nvgFontFaceId(args.vg, textfont->handle);
 					nvgTextLetterSpacing(args.vg, -1);
@@ -8265,25 +8212,25 @@ struct MeanderWidget : ModuleWidget
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 					
 					char text[128];
-					snprintf(text, sizeof(text), "%s", "PS-PurrSoftware   Meander");  
+					// snprintf(text, sizeof(text), "%s", "PS-PurrSoftware   Meander");  
 					Vec pos=Vec(245, 15); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "PS-PurrSoftware   Meander", NULL);
 
-					snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
+					// snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
 					nvgFontSize(args.vg, 11);
 					pos=Vec(275, 340); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "Mode Scale Notes", NULL);
 				
 
-					snprintf(text, sizeof(text), "%s", "Harmonic Progression Diatonic Circle of 5ths");  
+					// snprintf(text, sizeof(text), "%s", "Harmonic Progression Diatonic Circle of 5ths");  
 					nvgFontSize(args.vg, 15);
 					pos=Vec(345, 35);  
 					nvgStrokeWidth(args.vg, 2.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "Harmonic Progression Diatonic Circle of 5ths", NULL);
 
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 
 					nvgStrokeWidth(args.vg, 1.0);
 					nvgStrokeColor(args.vg, Meander_panelLineColor);
@@ -8300,12 +8247,12 @@ struct MeanderWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0xff, 0x20, 0x20, (int)opacity));  // reddish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Major"); 
+					// snprintf(text, sizeof(text), "%s", "Major"); 
 					nvgFillColor(args.vg, Meander_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(261, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Major", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, 325, 45);
@@ -8316,12 +8263,12 @@ struct MeanderWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0x20, 0xff, (int)opacity));  //bluish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Minor"); 
+					// snprintf(text, sizeof(text), "%s", "Minor"); 
 					nvgFillColor(args.vg, Meander_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(336, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Minor", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 					nvgMoveTo(args.vg, 400, 45);
@@ -8332,12 +8279,12 @@ struct MeanderWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0xff, 0x20, (int)opacity));  // greenish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Diminished"); 
+					// snprintf(text, sizeof(text), "%s", "Diminished"); 
 					nvgFillColor(args.vg, Meander_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(404, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Diminished", NULL);
+					// nvgClosePath(args.vg);
 
 					// Time display on panel
 					if (module)  
@@ -8390,6 +8337,8 @@ struct MeanderWidget : ModuleWidget
 	
 	};  // end struct CircleOf5thsDisplay  
 
+	CircleOf5thsDisplay *display;
+
 	float dummytempo=120;  // for module==null browser visibility purposes
 	int dummysig=4;        // for module==null browser visibility purposes
 	int dummyindex=0;      // for module==null browser visibility purposes
@@ -8400,17 +8349,17 @@ struct MeanderWidget : ModuleWidget
 		this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
 			
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Meander-light.svg")));
-		svgPanel=(SvgPanel*)getPanel();
-		svgPanel->setVisible((Meander_panelTheme) == 0);  
+		// svgPanel=(SvgPanel*)getPanel();
+		// svgPanel->setVisible((Meander_panelTheme) == 0);  
 				
 		Meander_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
 		
-		darkPanel = new SvgPanel();
-		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Meander-dark.svg")));
-		darkPanel->setVisible((Meander_panelTheme) == 1);  
-		addChild(darkPanel);
+		// darkPanel = new SvgPanel();
+		// darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Meander-dark.svg")));
+		// darkPanel->setVisible((Meander_panelTheme) == 1);  
+		// addChild(darkPanel);
 							
-		rack::random::init();  // must be called per thread
+		// rack::random::init();  // must be called per thread
 
 		 if (true)   // must be executed even if module* is null. module* is checked for null below where accessed as it is null in browser preview
 		 {
@@ -8443,7 +8392,7 @@ struct MeanderWidget : ModuleWidget
 			
 			addChild(MeanderScaleSelectDisplay);
 
-			CircleOf5thsDisplay *display = new CircleOf5thsDisplay(module);
+			display = new CircleOf5thsDisplay(module);
 			display->ParameterRectLocal=ParameterRect;
 			display->InportRectLocal=InportRect;  
 			display->OutportRectLocal=OutportRect;  
@@ -8494,62 +8443,62 @@ struct MeanderWidget : ModuleWidget
 			//*************   Note: Each LEDButton needs its light and that light needs a unique ID, needs to be added to an array and then needs to be repositioned along with the button.  Also needs to be enumed with other lights so lights[] picks it up.
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_C_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.227, 37.257)), module, Meander::BUTTON_CIRCLESTEP_C_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_C_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_1);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_1);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_1]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_G_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.479, 41.32)), module, Meander::BUTTON_CIRCLESTEP_G_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_G_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_2);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_2);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_2]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_D_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(143.163, 52.155)), module, Meander::BUTTON_CIRCLESTEP_D_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_D_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_3);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_3);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_3]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_A_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(147.527, 67.353)), module, Meander::BUTTON_CIRCLESTEP_A_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_A_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_4);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_4);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_4]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_E_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(141.96, 83.906)), module, Meander::BUTTON_CIRCLESTEP_E_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_E_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_5);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_5);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_5]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_B_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.931, 94.44)), module, Meander::BUTTON_CIRCLESTEP_B_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_B_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_6);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_6);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_6]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_GBFS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.378, 98.804)), module, Meander::BUTTON_CIRCLESTEP_GBFS_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_GBFS_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_7);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_7);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_7]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_DB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.029, 93.988)), module, Meander::BUTTON_CIRCLESTEP_DB_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_DB_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_8);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_8);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_8]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_AB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(91.097, 83.906)), module, Meander::BUTTON_CIRCLESTEP_AB_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_AB_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_9);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_9);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_9]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_EB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(86.282, 68.106)), module, Meander::BUTTON_CIRCLESTEP_EB_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_EB_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_10);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_10);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_10]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_BB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(89.743, 52.004)), module, Meander::BUTTON_CIRCLESTEP_BB_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_BB_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_11);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_11);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_11]);
 		
 			paramWidgets[Meander::BUTTON_CIRCLESTEP_F_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.781, 40.568)), module, Meander::BUTTON_CIRCLESTEP_F_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_CIRCLESTEP_F_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_12);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, Meander::LIGHT_LEDBUTTON_CIRCLESTEP_12);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESTEP_12]);
 		
 	//*************
@@ -8595,114 +8544,114 @@ struct MeanderWidget : ModuleWidget
 					
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.197, 106.483)), module, Meander::BUTTON_HARMONY_SETSTEP_1_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_1_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.197, 106.483)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_1);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.197, 106.483)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_1);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_1]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_2_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 98.02)), module, Meander::BUTTON_HARMONY_SETSTEP_2_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_2_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 98.02)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_2);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 98.02)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_2);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_2]);
 
 		
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_3_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 89.271)), module, Meander::BUTTON_HARMONY_SETSTEP_3_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_3_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 89.271)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_3);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 89.271)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_3);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_3]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_4_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 81.9233)), module, Meander::BUTTON_HARMONY_SETSTEP_4_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_4_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 81.923)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_4);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 81.923)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_4);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_4]);
 
 		
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_5_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 73.184)), module, Meander::BUTTON_HARMONY_SETSTEP_5_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_5_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 73.184)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_5);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 73.184)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_5);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_5]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_6_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.918, 66.129)), module, Meander::BUTTON_HARMONY_SETSTEP_6_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_6_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.918, 66.129)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_6);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.918, 66.129)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_6);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_6]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_7_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(65.193, 57.944)), module, Meander::BUTTON_HARMONY_SETSTEP_7_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_7_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(65.193, 57.944)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_7);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(65.193, 57.944)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_7);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_7]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_8_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.911, 49.474)), module, Meander::BUTTON_HARMONY_SETSTEP_8_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_8_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.911, 49.474)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_8);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.911, 49.474)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_8);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_8]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_9_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(4.629, 41.011)), module, Meander::BUTTON_HARMONY_SETSTEP_9_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_9_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(4.629, 41.011)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_9);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(4.629, 41.011)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_9);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_9]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_10_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.629, 32.827)), module, Meander::BUTTON_HARMONY_SETSTEP_10_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_10_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.629, 32.827)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_10);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.629, 32.827)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_10);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_10]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_11_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.629, 24.649)), module, Meander::BUTTON_HARMONY_SETSTEP_11_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_11_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.629, 24.649)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_11);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.629, 24.649)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_11);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_11]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_12_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, Meander::BUTTON_HARMONY_SETSTEP_12_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_12_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_12);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_12);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_12]);
 
 		
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_13_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, Meander::BUTTON_HARMONY_SETSTEP_13_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_13_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_13);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_13);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_13]);
 
 		
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_14_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, Meander::BUTTON_HARMONY_SETSTEP_14_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_14_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_14);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_14);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_14]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_15_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, Meander::BUTTON_HARMONY_SETSTEP_15_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_15_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_15);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_15);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_15]);
 
 			
 			paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_16_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(64.632, 16.176)), module, Meander::BUTTON_HARMONY_SETSTEP_16_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_HARMONY_SETSTEP_16_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_16);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(64.632, 16.176)), module, Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_16);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_CIRCLESETSTEP_16]);
 
 			//**********General************************
 			
 			paramWidgets[Meander::BUTTON_RUN_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(19.7, 10.45)), module, Meander::BUTTON_RUN_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_RUN_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_RUN]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(19.7, 10.45)), module, Meander::LIGHT_LEDBUTTON_RUN);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_RUN]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(19.7, 10.45)), module, Meander::LIGHT_LEDBUTTON_RUN);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_RUN]);
         
 			paramWidgets[Meander::BUTTON_RESET_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(19.7, 22.55)), module, Meander::BUTTON_RESET_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_RESET_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_RESET]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(19.7, 22.55)), module, Meander::LIGHT_LEDBUTTON_RESET);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_RESET]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(19.7, 22.55)), module, Meander::LIGHT_LEDBUTTON_RESET);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_RESET]);
 
 			paramWidgets[Meander::BUTTON_RAND_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(29.7, 22.55)), module, Meander::BUTTON_RAND_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_RAND_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_RAND]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(29.7, 22.55)), module, Meander::LIGHT_LEDBUTTON_RAND);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_RAND]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(29.7, 22.55)), module, Meander::LIGHT_LEDBUTTON_RAND);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_RAND]);
          
 			paramWidgets[Meander::CONTROL_TEMPOBPM_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(8.12, 35.4)), module, Meander::CONTROL_TEMPOBPM_PARAM);
@@ -8726,7 +8675,7 @@ struct MeanderWidget : ModuleWidget
 						
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 12.622)), module, Meander::BUTTON_ENABLE_HARMONY_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_HARMONY_ENABLE]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 12.622)), module, Meander::LIGHT_LEDBUTTON_HARMONY_ENABLE);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_HARMONY_ENABLE]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 12.622)), module, Meander::LIGHT_LEDBUTTON_HARMONY_ENABLE);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_HARMONY_ENABLE]);
 		
 			paramWidgets[Meander::CONTROL_HARMONY_VOLUME_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(173.849, 20.384)), module, Meander::CONTROL_HARMONY_VOLUME_PARAM);
@@ -8752,17 +8701,17 @@ struct MeanderWidget : ModuleWidget
 			
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 69)), module, Meander::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_ALL7THS_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 69)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 69)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_ALL7THS_PARAM]);
 			
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_V7THS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(203.849, 69)), module, Meander::BUTTON_ENABLE_HARMONY_V7THS_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_V7THS_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(203.849, 69)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(203.849, 69)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_V7THS_PARAM]);
 			
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, Meander::BUTTON_ENABLE_HARMONY_STACCATO_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_STACCATO_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_STACCATO_PARAM]);
 			
 			paramWidgets[Meander::CONTROL_HARMONYPRESETS_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(174.027, 81.524)), module, Meander::CONTROL_HARMONYPRESETS_PARAM);
@@ -8773,22 +8722,22 @@ struct MeanderWidget : ModuleWidget
 						
 			paramWidgets[Meander::BUTTON_ENABLE_MELODY_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(240.353, 10.986)), module, Meander::BUTTON_ENABLE_MELODY_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_MELODY_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(240.353, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(240.353, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE]);
 			
 			paramWidgets[Meander::BUTTON_ENABLE_MELODY_CHORDAL_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(270.353, 10.986)), module, Meander::BUTTON_ENABLE_MELODY_CHORDAL_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_MELODY_CHORDAL_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_CHORDAL]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(270.353, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_CHORDAL);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_CHORDAL]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(270.353, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_CHORDAL);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_CHORDAL]);
 			
 			paramWidgets[Meander::BUTTON_ENABLE_MELODY_SCALER_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(287.274, 10.986)), module, Meander::BUTTON_ENABLE_MELODY_SCALER_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_MELODY_SCALER_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_SCALER]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(287.274, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_SCALER);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_SCALER]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(287.274, 10.986)), module, Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_SCALER);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_ENABLE_SCALER]);
 			
 			paramWidgets[Meander::BUTTON_MELODY_DESTUTTER_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(240.409, 25.524)), module, Meander::BUTTON_MELODY_DESTUTTER_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_MELODY_DESTUTTER_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_DESTUTTER]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(240.409, 25.524)), module, Meander::LIGHT_LEDBUTTON_MELODY_DESTUTTER);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_DESTUTTER]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(240.409, 25.524)), module, Meander::LIGHT_LEDBUTTON_MELODY_DESTUTTER);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_MELODY_DESTUTTER]);
 			
 			paramWidgets[Meander::CONTROL_MELODY_VOLUME_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(240.353, 19.217)), module, Meander::CONTROL_MELODY_VOLUME_PARAM);
@@ -8812,17 +8761,17 @@ struct MeanderWidget : ModuleWidget
 			
 			paramWidgets[Meander::BUTTON_ENABLE_ARP_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(240.274, 62.01)), module, Meander::BUTTON_ENABLE_ARP_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_ARP_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(240.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(240.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE]);
 
 			paramWidgets[Meander::BUTTON_ENABLE_ARP_CHORDAL_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(265.274, 62.01)), module, Meander::BUTTON_ENABLE_ARP_CHORDAL_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_ARP_CHORDAL_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_CHORDAL]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(265.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE_CHORDAL);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_CHORDAL]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(265.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE_CHORDAL);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_CHORDAL]);
 
 			paramWidgets[Meander::BUTTON_ENABLE_ARP_SCALER_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(283.274, 62.01)), module, Meander::BUTTON_ENABLE_ARP_SCALER_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_ARP_SCALER_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_SCALER]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(283.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE_SCALER);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_SCALER]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(283.274, 62.01)), module, Meander::LIGHT_LEDBUTTON_ARP_ENABLE_SCALER);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ARP_ENABLE_SCALER]);
 
 			paramWidgets[Meander::CONTROL_ARP_COUNT_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(240.274, 68.014)), module, Meander::CONTROL_ARP_COUNT_PARAM);
@@ -8831,7 +8780,7 @@ struct MeanderWidget : ModuleWidget
 			
 			paramWidgets[Meander::BUTTON_ENABLE_MELODY_STACCATO_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(240.274, 75)), module, Meander::BUTTON_ENABLE_MELODY_STACCATO_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_MELODY_STACCATO_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_MELODY_STACCATO_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(240.274, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_MELODY_STACCATO_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_MELODY_STACCATO_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(240.274, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_MELODY_STACCATO_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_MELODY_STACCATO_PARAM]);
 
 			paramWidgets[Meander::CONTROL_ARP_INCREMENT_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(240.256, 82.807)), module, Meander::CONTROL_ARP_INCREMENT_PARAM);
@@ -8849,7 +8798,7 @@ struct MeanderWidget : ModuleWidget
 		
 			paramWidgets[Meander::BUTTON_ENABLE_BASS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305, 10.378)), module, Meander::BUTTON_ENABLE_BASS_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_BASS_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ENABLE]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305, 10.378)), module, Meander::LIGHT_LEDBUTTON_BASS_ENABLE);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ENABLE]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305, 10.378)), module, Meander::LIGHT_LEDBUTTON_BASS_ENABLE);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ENABLE]);
 			
 		    paramWidgets[Meander::CONTROL_BASS_VOLUME_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(305, 21.217)), module, Meander::CONTROL_BASS_VOLUME_PARAM);
@@ -8861,22 +8810,22 @@ struct MeanderWidget : ModuleWidget
 			
 			paramWidgets[Meander::BUTTON_BASS_ACCENT_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305,  37.217)), module, Meander::BUTTON_BASS_ACCENT_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_BASS_ACCENT_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ACCENT_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305,  37.217)), module, Meander::LIGHT_LEDBUTTON_BASS_ACCENT_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ACCENT_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305,  37.217)), module, Meander::LIGHT_LEDBUTTON_BASS_ACCENT_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_ACCENT_PARAM]);
 			
 			paramWidgets[Meander::BUTTON_BASS_SYNCOPATE_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305,  45.217)), module, Meander::BUTTON_BASS_SYNCOPATE_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_BASS_SYNCOPATE_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SYNCOPATE_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305,  45.217)), module, Meander::LIGHT_LEDBUTTON_BASS_SYNCOPATE_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SYNCOPATE_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305,  45.217)), module, Meander::LIGHT_LEDBUTTON_BASS_SYNCOPATE_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SYNCOPATE_PARAM]);
 			
 			paramWidgets[Meander::BUTTON_BASS_SHUFFLE_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305,  53.217)), module, Meander::BUTTON_BASS_SHUFFLE_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_BASS_SHUFFLE_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SHUFFLE_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305,  53.217)), module, Meander::LIGHT_LEDBUTTON_BASS_SHUFFLE_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SHUFFLE_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305,  53.217)), module, Meander::LIGHT_LEDBUTTON_BASS_SHUFFLE_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_SHUFFLE_PARAM]);
 			
 			paramWidgets[Meander::BUTTON_BASS_OCTAVES_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305,  53.217)), module, Meander::BUTTON_BASS_OCTAVES_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_BASS_OCTAVES_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_OCTAVES_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305,  74.076)), module, Meander::LIGHT_LEDBUTTON_BASS_OCTAVES_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_OCTAVES_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305,  74.076)), module, Meander::LIGHT_LEDBUTTON_BASS_OCTAVES_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_BASS_OCTAVES_PARAM]);
 			
 			paramWidgets[Meander::CONTROL_BASS_DIVISOR_PARAM]=createParamCentered<Trimpot>(mm2px(Vec(305, 61.217)), module, Meander::CONTROL_BASS_DIVISOR_PARAM);
@@ -8885,19 +8834,19 @@ struct MeanderWidget : ModuleWidget
 			
 			paramWidgets[Meander::BUTTON_ENABLE_BASS_STACCATO_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(305, 88.859)), module, Meander::BUTTON_ENABLE_BASS_STACCATO_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_BASS_STACCATO_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_BASS_STACCATO_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(305, 70)), module, Meander::LIGHT_LEDBUTTON_ENABLE_BASS_STACCATO_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_BASS_STACCATO_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(305, 70)), module, Meander::LIGHT_LEDBUTTON_ENABLE_BASS_STACCATO_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_BASS_STACCATO_PARAM]);
 
 	//************************		
 
 			paramWidgets[Meander::BUTTON_ENABLE_KEYBOARD_RENDER_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(880, 12)), module, Meander::BUTTON_ENABLE_KEYBOARD_RENDER_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_KEYBOARD_RENDER_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_KEYBOARD_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(1000, 10)), module, Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_KEYBOARD_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_KEYBOARD_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(1000, 10)), module, Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_KEYBOARD_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_KEYBOARD_PARAM]);
 
 			paramWidgets[Meander::BUTTON_ENABLE_SCORE_RENDER_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(880, 30)), module, Meander::BUTTON_ENABLE_SCORE_RENDER_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_SCORE_RENDER_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_SCORE_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(1000, 200)), module, Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_SCORE_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_SCORE_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(1000, 200)), module, Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_SCORE_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_RENDER_SCORE_PARAM]);
 
 			//**************fBm************************
@@ -8927,23 +8876,23 @@ struct MeanderWidget : ModuleWidget
 
 			paramWidgets[Meander::BUTTON_PROG_STEP_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(350, 250)), module, Meander::BUTTON_PROG_STEP_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_PROG_STEP_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_PROG_STEP_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(350, 250)), module, Meander::LIGHT_LEDBUTTON_PROG_STEP_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_PROG_STEP_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(350, 250)), module, Meander::LIGHT_LEDBUTTON_PROG_STEP_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_PROG_STEP_PARAM]);
 
 			// Appended params
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(203.849, 75)), module, Meander::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(203.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(203.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_4VOICE_OCTAVES_PARAM]);
 
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, Meander::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_TONIC_ON_CH1_PARAM]);
 
 			paramWidgets[Meander::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(173.849, 75)), module, Meander::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
 			addParam(paramWidgets[Meander::BUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]);
-			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createLightCentered<MediumSimpleLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
+			lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]=createLightCentered<MediumLight<RedLight>>(mm2px(Vec(173.849, 75)), module, Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM);
 			addChild(lightWidgets[Meander::LIGHT_LEDBUTTON_ENABLE_HARMONY_BASS_ON_CH1_PARAM]);
 			
 					 
@@ -9021,8 +8970,8 @@ struct MeanderWidget : ModuleWidget
 			outPortWidgets[Meander::OUT_FBM_ARP_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(380.0, 124.831)), module, Meander::OUT_FBM_ARP_OUTPUT);
 			addOutput(outPortWidgets[Meander::OUT_FBM_ARP_OUTPUT]);
 
-			outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(380.0, 124.831)), module, Meander::OUT_EXT_POLY_SCALE_OUTPUT);
-			addOutput(outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]);
+			// outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(380.0, 124.831)), module, Meander::OUT_EXT_POLY_SCALE_OUTPUT);
+			// addOutput(outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]);
 
 			outPortWidgets[Meander::OUT_CLOCK_OUT]=createOutputCentered<PJ301MPort>(mm2px(Vec(45.0, 350.0)), module, Meander::OUT_CLOCK_OUT);
 			addOutput(outPortWidgets[Meander::OUT_CLOCK_OUT]);
@@ -9421,7 +9370,7 @@ struct MeanderWidget : ModuleWidget
 			drawCenter=drawCenter.plus(Vec(33,0));
 
 			drawCenter=Vec(145., 289.);
-			outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
+			// outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[Meander::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
 			drawCenter=drawCenter.plus(Vec(40,0));
 				
 			drawCenter=Vec(50., 365.); 
@@ -9482,63 +9431,37 @@ struct MeanderWidget : ModuleWidget
 	void appendContextMenu(Menu *menu) override 
 	{  
         Meander *module = dynamic_cast<Meander*>(this->module);
-		if (module==NULL)
-			return;
-   
-		MenuLabel *panelthemeLabel = new MenuLabel();
-        panelthemeLabel->text = "Panel Theme                               ";
-        menu->addChild(panelthemeLabel);
-
-		MeanderPanelThemeItem *lightpaneltheme_Item = new MeanderPanelThemeItem();  // this accomodates json loaded value
-        lightpaneltheme_Item->text = "  light";
-		lightpaneltheme_Item->module = module;
-   	    lightpaneltheme_Item->theme = 0;
-	    menu->addChild(lightpaneltheme_Item); 
-
-		MeanderPanelThemeItem *darkpaneltheme_Item = new MeanderPanelThemeItem();  // this accomodates json loaded value
-        darkpaneltheme_Item->text = "  dark";
-		darkpaneltheme_Item->module = module;
-   	    darkpaneltheme_Item->theme = 1;
-        menu->addChild(darkpaneltheme_Item);
-
-		// create contrast control
-	
-		MinMaxSliderItem *minSliderItem = new MinMaxSliderItem(&Meander_panelContrast, "Contrast");
-		minSliderItem->box.size.x = 200.f;
-		menu->addChild(minSliderItem);
-	
-		//
-
-		MenuLabel *modeLabel = new MenuLabel();
-        modeLabel->text = "Scale Out Mode                               ";
-        menu->addChild(modeLabel);
+  
+		// MenuLabel *modeLabel = new MenuLabel();
+        // modeLabel->text = "Scale Out Mode                               ";
+        // menu->addChild(modeLabel);
 		
 		
-		MeanderScaleOutModeItem *chromatic_Item = new MeanderScaleOutModeItem();
-        chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
-        chromatic_Item->module = module;
-        chromatic_Item->mode = Meander::HEPTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_Item);
+		// MeanderScaleOutModeItem *chromatic_Item = new MeanderScaleOutModeItem();
+        // chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
+        // chromatic_Item->module = module;
+        // chromatic_Item->mode = Meander::HEPTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_Item);
 
-		MeanderScaleOutModeItem *heptatonic_Item = new MeanderScaleOutModeItem();
-        heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
-        heptatonic_Item->module = module;
-        heptatonic_Item->mode = Meander::HEPTATONIC_DIATONIC_STD_7CH;
-        menu->addChild(heptatonic_Item);
+		// MeanderScaleOutModeItem *heptatonic_Item = new MeanderScaleOutModeItem();
+        // heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
+        // heptatonic_Item->module = module;
+        // heptatonic_Item->mode = Meander::HEPTATONIC_DIATONIC_STD_7CH;
+        // menu->addChild(heptatonic_Item);
 
 
-		MeanderScaleOutModeItem *pentatonic_Item = new MeanderScaleOutModeItem();
-        pentatonic_Item->text = "  Pentatonic-5ch";
-        pentatonic_Item->module =module;
-        pentatonic_Item->mode = Meander::PENTATONIC_5CH;
-        menu->addChild(pentatonic_Item); 
+		// MeanderScaleOutModeItem *pentatonic_Item = new MeanderScaleOutModeItem();
+        // pentatonic_Item->text = "  Pentatonic-5ch";
+        // pentatonic_Item->module =module;
+        // pentatonic_Item->mode = Meander::PENTATONIC_5CH;
+        // menu->addChild(pentatonic_Item); 
 		
 
-		MeanderScaleOutModeItem *chromatic_pentatonic_Item = new MeanderScaleOutModeItem();
-        chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
-        chromatic_pentatonic_Item->module = module;
-        chromatic_pentatonic_Item->mode = Meander::PENTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_pentatonic_Item);
+		// MeanderScaleOutModeItem *chromatic_pentatonic_Item = new MeanderScaleOutModeItem();
+        // chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
+        // chromatic_pentatonic_Item->module = module;
+        // chromatic_pentatonic_Item->mode = Meander::PENTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_pentatonic_Item);
 
 		
    		MenuLabel *modeLabel3 = new MenuLabel();
@@ -9584,353 +9507,150 @@ struct MeanderWidget : ModuleWidget
 	{  
 		Meander *module = dynamic_cast<Meander*>(this->module);  
 
-		if (true) // needs to happen even if module==null
+		if (module->theMeanderState.updateDisplay)
 		{
-			if (svgPanel)
-			    svgPanel->setVisible((Meander_panelTheme) == 0);    
-			if (darkPanel)                             
-				darkPanel->setVisible((Meander_panelTheme) == 1);    
-		
-			float contrast=Meander_panelContrast;
-
-			// update the global panel theme vars
-			if (Meander_panelTheme==0)  // light theme
-			{
-				Meander_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
-				float color =255*(1-contrast);
-				Meander_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black text
-				Meander_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black lines
-				color =255*contrast;
-				Meander_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-			
-				{
-					float r=Meander_panelHarmonyPartBaseColor.r; 
-					float g=(1-contrast);
-					float b=(1-contrast);
-					Meander_panelHarmonyPartColor=nvgRGBA(r*156, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=Meander_panelArpPartBaseColor.b;
-					Meander_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=Meander_panelBassPartBaseColor.g;
-					float b=(1-contrast);
-					Meander_panelBassPartColor=nvgRGBA(r*255, g*128, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=(1-contrast);
-					Meander_panelMelodyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-						
-			}
-			else  // dark theme
-			{
-				Meander_panelcolor=nvgRGBA((unsigned char)40,(unsigned char)40,(unsigned char)40,(unsigned char)255);
-				float color = 255*contrast;
-				Meander_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white text
-				Meander_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white lines
-				color =255*contrast;
-				Meander_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-
-				{
-					float r=Meander_panelHarmonyPartBaseColor.r*contrast;
-					float g=0.45;
-					float b=0.45;
-					Meander_panelHarmonyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float b=Meander_panelArpPartBaseColor.b*contrast;
-					float r=0.45;
-					float g=0.45;
-					Meander_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float g=Meander_panelBassPartBaseColor.g*contrast;
-					float r=0.45;
-					float b=0.45;
-					Meander_panelBassPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(contrast);
-					float g=(contrast);
-					float b=(contrast);
-					Meander_panelMelodyPartColor=nvgRGBA(r*228, g*228, b*228, 255);
-				}
-			}
+			module->theMeanderState.updateDisplay = false;
+			display->dirty = true;
 		}
 
 		// determine STEP cable connections to Meander trigger outs, if any
-	  	if (module != NULL)  // not in the browser
 		{  
-			module->onResetScale();  // make sure channels and scale notes outports are initialized for each frame, in case they have not been iniitialized
-			
-			module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=0;  // 0 will be interpreted elsewhere as "no connection", which may be overwritten below
-	
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[Meander::IN_PROG_STEP_EXT_CV]))
-			{	
-				if (!cwIn->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   continue;
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[Meander::IN_PROG_STEP_EXT_CV]))
+			{
+				auto cable = cwIn->wire;
 
-				module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection, which may be overwritten below
-				
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[Meander::OUT_CLOCK_BAR_OUTPUT]))
+				if (cable->outputModule == module)
 				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=Meander::OUT_CLOCK_BAR_OUTPUT;  
-					}
-										
+					if (cable->outputId == Meander::OUT_CLOCK_BAR_OUTPUT ||
+						cable->outputId == Meander::OUT_CLOCK_BEAT_OUTPUT ||
+						cable->outputId == Meander::OUT_CLOCK_BEATX2_OUTPUT ||
+						cable->outputId == Meander::OUT_CLOCK_BEATX4_OUTPUT ||
+						cable->outputId == Meander::OUT_CLOCK_BEATX8_OUTPUT)
+						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port = cable->outputId;
+					else
+						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection
 				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[Meander::OUT_CLOCK_BEAT_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=Meander::OUT_CLOCK_BEAT_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[Meander::OUT_CLOCK_BEATX2_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=Meander::OUT_CLOCK_BEATX2_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[Meander::OUT_CLOCK_BEATX4_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=Meander::OUT_CLOCK_BEATX4_OUTPUT;
-					}
-					
-				}
-				for (CableWidget* cwOut : APP->scene->rack->getCablesOnPort(outPortWidgets[Meander::OUT_CLOCK_BEATX8_OUTPUT]))
-				{
-					if (!cwOut->isComplete())        // new for testing, from    vcvrack-packone strip.cpp                                              
-                   		continue;
-					if (cwOut->cable->id == cwIn->cable->id)
-					{
-						module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=Meander::OUT_CLOCK_BEATX8_OUTPUT;  
-					}
-				}
+				else
+					module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=1;  // 1 will be interpreted elsewhere as an unknown complete connection
 			}
+			else
+				module->theMeanderState.theHarmonyParms.STEP_inport_connected_to_Meander_trigger_port=0;  // 0 will be interpreted elsewhere as "no connection"
 		}
 
 		// root inport cable handling 
-		if (module != NULL)  // not in the browser
 		{
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[Meander::IN_ROOT_KEY_EXT_CV]))  // look at each cable on the root key input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[Meander::IN_ROOT_KEY_EXT_CV]))
 			{
-				if (!cwIn->isComplete())    // the cable connection has NOT been completed
-				{        
-				   module->theMeanderState.RootInputSuppliedByRootOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_ROOT_KEY_EXT_CV
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
+			
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+				if ((outputmodel->slug == "ModeScaleProgressions") ||
+					(outputmodel->slug == "ModeScaleQuant") ||
+					(outputmodel->slug == "Meander"))
 				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
-				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				    if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{
-						    if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))
-							{
-								if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theMeanderState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than Meander
-							{
-								module->theMeanderState.RootInputSuppliedByRootOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theMeanderState.RootInputSuppliedByRootOutput=false;
-						}
-					}
-					else  // no outputModule
-					{
-						module->theMeanderState.RootInputSuppliedByRootOutput=false;
-					}
-
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
-					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
-						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-								if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							        (inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							        (inputmodel->slug.substr(0, 7) == std::string("Meander")))    
-								{
-									if (inputId==Meander::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
-									{
-									}
-									else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
-									{
-										module->theMeanderState.RootInputSuppliedByRootOutput=false;
-									}
-								}
-								else  // connected to moudule other than Maender
-								{
-									module->theMeanderState.RootInputSuppliedByRootOutput=false;
-								}
-							}
-							else  // no input model
-							{
-								module->theMeanderState.RootInputSuppliedByRootOutput=false;
-							}
-						}
-						else  // "cable inputModule is equal to cable outputModule"
-						{
-							module->theMeanderState.RootInputSuppliedByRootOutput=false;
-						}
-					}
-					else  // no input module
-					{
-						module->theMeanderState.RootInputSuppliedByRootOutput=false;
+						module->theMeanderState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
 					}
 				}
-				else  // there is no cable attached
+				else // connected to moudule other than Meander
 				{
 					module->theMeanderState.RootInputSuppliedByRootOutput=false;
 				}
-			} 
+
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+					if ((inputmodel->slug == "ModeScaleProgressions")||
+						(inputmodel->slug == "ModeScaleQuant")|| 
+					    (inputmodel->slug == "Meander")) 
+					{
+						if (inputId==Meander::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
+						{
+						}
+						else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
+						{
+							module->theMeanderState.RootInputSuppliedByRootOutput=false;
+						}
+					}
+					else  // connected to moudule other than Maender
+					{
+						module->theMeanderState.RootInputSuppliedByRootOutput=false;
+					}
+				}
+				else  // "cable inputModule is equal to cable outputModule"
+				{
+					module->theMeanderState.RootInputSuppliedByRootOutput=false;
+				}
+			}
+			else  // there is no cable attached
+			{
+				module->theMeanderState.RootInputSuppliedByRootOutput=false;
+			}
 		}  
 
 		// add mode inport cable handling 
-		if (module != NULL)  // not in the browser
 		{
 			//"Examine module MODE cables--------------------"
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[Meander::IN_SCALE_EXT_CV]))  // look at each cable on the mode scale input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[Meander::IN_SCALE_EXT_CV]))
 			{
-				if (!cwIn->isComplete())   // the cable connection has NOT been completed    
-				{        
-				   module->theMeanderState.ModeInputSuppliedByModeOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_SCALE_EXT_CV
-				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
 				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+			    if ((outputmodel->slug == "ModeScaleProgressions") ||  
+			    	(outputmodel->slug == "ModeScaleQuant") ||  
+				    (outputmodel->slug == "Meander"))  
+				{
+					if ((outputId==5)||(outputId==27)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT" kludge out of scope ModeScaleQuant variable access
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{         
-						    if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							{
-								if ((outputId==5)||(outputId==27)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theMeanderState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than Meander
-							{
-								module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-						}
-					}
-					else  // no outputModule
-					{
-						module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-					}
-
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
-					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
-						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-							    if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							        (inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							        (inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-								{
-									if (inputId==Meander::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
-									{
-									}
-									else // "cable inputID is not IN_SCALE_EXT_CV"
-									{
-										module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-									}
-								}
-								else  // connected to moudule other than Maender
-								{
-									module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-								}
-							}
-							else  // no input model
-							{
-								module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-							}
-						}
-						else  // "cable inputModule is equal to cable outputModule"
-						{
-							module->theMeanderState.ModeInputSuppliedByModeOutput=false;
-						}
-					}
-					else  // no input module
-					{
-						module->theMeanderState.ModeInputSuppliedByModeOutput=false;
+						module->theMeanderState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
 					}
 				}
-				else  // there is no cable attached
+				else // connected to moudule other than Meander
 				{
 					module->theMeanderState.ModeInputSuppliedByModeOutput=false;
 				}
+
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+					if ((inputmodel->slug == "ModeScaleProgressions") ||
+						(inputmodel->slug == "ModeScaleQuant") ||
+					    (inputmodel->slug == "Meander")) 
+					{
+						if (inputId==Meander::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
+						{
+						}
+						else // "cable inputID is not IN_SCALE_EXT_CV"
+						{
+							module->theMeanderState.ModeInputSuppliedByModeOutput=false;
+						}
+					}
+					else  // connected to moudule other than Maender
+					{
+						module->theMeanderState.ModeInputSuppliedByModeOutput=false;
+					}
+				}
+				else  // "cable inputModule is equal to cable outputModule"
+				{
+					module->theMeanderState.ModeInputSuppliedByModeOutput=false;
+				}
+			}
+			else  // there is no cable attached
+			{
+				module->theMeanderState.ModeInputSuppliedByModeOutput=false;
 			}
 		
 		}  
 		//
 
-		// if in the browser, force a panel redraw per frame with the current panel theme
-		if (!module) {
-			DirtyEvent eDirty;
-			parent->parent->onDirty(eDirty);
-		}
-		else  // not in the browser
-		Widget::step();  // most modules do this rather than ModuleWidget::step()
+		ModuleWidget::step();
 	
 		
 	} // end step()

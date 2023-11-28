@@ -22,7 +22,8 @@ SOURCES += $(wildcard src/*.cpp)
 
 # Add files to the ZIP package when running `make dist`
 # The compiled plugin and "plugin.json" are automatically added.
-DISTRIBUTABLES += res
+DISTRIBUTABLES  = res/fonts/Nunito-Bold.ttf res/Ubuntu\ Condensed\ 400.ttf res/Bravura.otf res/ModeScaleQuant-light.svg
+DISTRIBUTABLES += res/fonts/DSEG7ClassicMini-Bold.ttf res/Meander-light.svg res/TinyPJ301M.svg res/ModeScaleProgressions-light.svg
 DISTRIBUTABLES += $(wildcard LICENSE*)
 
 # Include the Rack plugin Makefile framework

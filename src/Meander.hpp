@@ -128,12 +128,12 @@ NVGcolor Meander_panelBassPartBaseColor=nvgRGBA((unsigned char)0,(unsigned char)
 NVGcolor Meander_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);  // whiteish
 NVGcolor Meander_panelTextColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor Meander_paramTextColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // yellow
-NVGcolor Meander_panelLineColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)255,(unsigned char)255);  // white
+NVGcolor Meander_panelLineColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 
-NVGcolor Meander_panelHarmonyPartColor=nvgRGBA((unsigned char)255,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
+NVGcolor Meander_panelHarmonyPartColor=nvgRGBA((unsigned char)156,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
 NVGcolor Meander_panelMelodyPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor Meander_panelArpPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)255,(unsigned char)255);  // blue
-NVGcolor Meander_panelBassPartColor=nvgRGBA((unsigned char)0,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // green
+NVGcolor Meander_panelBassPartColor=nvgRGBA((unsigned char)0,(unsigned char)128,(unsigned char)0,(unsigned char)255);  // green
 
 NVGcolor Meander_panelHarmonyKeyboardColor=nvgRGBA((unsigned char)0xff,(unsigned char)0x80,(unsigned char)0x80,(unsigned char)255);  // redish
 NVGcolor Meander_panelMelodyKeyboardColor=nvgRGBA((unsigned char)0x80,(unsigned char)0x80,(unsigned char)0x80,(unsigned char)255);  // blackish

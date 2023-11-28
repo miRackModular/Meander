@@ -128,9 +128,9 @@ NVGcolor MSP_panelBassPartBaseColor=nvgRGBA((unsigned char)0,(unsigned char)255,
 NVGcolor MSP_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);  // whiteish
 NVGcolor MSP_panelTextColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor MSP_paramTextColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // yellow
-NVGcolor MSP_panelLineColor=nvgRGBA((unsigned char)255,(unsigned char)255,(unsigned char)255,(unsigned char)255);  // white
+NVGcolor MSP_panelLineColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // white
 
-NVGcolor MSP_panelHarmonyPartColor=nvgRGBA((unsigned char)255,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
+NVGcolor MSP_panelHarmonyPartColor=nvgRGBA((unsigned char)156,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // red
 NVGcolor MSP_panelMelodyPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)0,(unsigned char)255);  // black
 NVGcolor MSP_panelArpPartColor=nvgRGBA((unsigned char)0,(unsigned char)0,(unsigned char)255,(unsigned char)255);  // blue
 NVGcolor MSP_panelBassPartColor=nvgRGBA((unsigned char)0,(unsigned char)255,(unsigned char)0,(unsigned char)255);  // green

@@ -1,4 +1,4 @@
-/*  Copyright (C) 2019-2024 Ken Chaffin  
+/*  Copyright (C) 2019-2024 Ken Chaffin
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
@@ -462,11 +462,11 @@ struct ModeScaleQuant : Module
 
 	rack::dsp::PulseGenerator extPolyQuantTriggerPulse[16]; 
 		
-	void onRandomize(const RandomizeEvent& e) override {
+	// void onRandomize(const RandomizeEvent& e) override {
 					
-		// Call super method if you wish to include default behavior
-	    Module::onRandomize(e);
-	}
+	// 	// Call super method if you wish to include default behavior
+	//     Module::onRandomize(e);
+	// }
 
     // save button states
 	json_t *dataToJson() override {
@@ -1004,27 +1004,6 @@ struct ModeScaleQuant : Module
 	
 };  // end of struct ModeScaleQuant
 
-struct MinMaxQuantity : Quantity { 
-	float *contrast = NULL;
-	std::string label = "Contrast";
-
-	MinMaxQuantity(float *_contrast, std::string _label) {
-		contrast = _contrast;
-		label = _label;
-	}
-	void setValue(float value) override {
-		*contrast = math::clamp(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return *contrast;
-	}
-
-	float getMinValue() override { return 0.50f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override {return MSQ_panelContrastDefault;}
-	std::string getLabel() override { return label; }
-	std::string getUnit() override { return " "; }
-};    
 
 
 struct ModeScaleQuantPanelThemeItem : MenuItem {    
@@ -1043,14 +1022,6 @@ struct ModeScaleQuantPanelThemeItem : MenuItem {
     
 	};
 
-struct MinMaxSliderItem : ui::Slider {
-		MinMaxSliderItem(float *value, std::string label) {
-			quantity = new MinMaxQuantity(value, label);
-		}
-		~MinMaxSliderItem() {
-			delete quantity;
-		}
-    };
 
 struct ModeScaleQuantScaleOutModeItem : MenuItem {   
     
@@ -1070,13 +1041,14 @@ struct ModeScaleQuantScaleOutModeItem : MenuItem {
 	};
 	
  
-struct ModeScaleQuantRootKeySelectLineDisplay : LightWidget {
+struct ModeScaleQuantRootKeySelectLineDisplay : TransparentWidget {
 
 	ModeScaleQuant *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	ModeScaleQuantRootKeySelectLineDisplay() {
-	
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	} 
 
 	void draw(const DrawArgs &args) override {
@@ -1084,7 +1056,7 @@ struct ModeScaleQuantRootKeySelectLineDisplay : LightWidget {
 		if (!module)
 			return; 
 		
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: an sans serif bold
 							
 		Vec textpos = Vec(19,11); 
 		
@@ -1107,23 +1079,24 @@ struct ModeScaleQuantRootKeySelectLineDisplay : LightWidget {
 		nvgFillColor(args.vg, MSQ_paramTextColor);
 		nvgStrokeWidth(args.vg, 3.0);
 
-		char text[128];
+		// char text[128];
 		
-		snprintf(text, sizeof(text), "%s", MSQ_root_key_names[*val]);
-		nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+		// snprintf(text, sizeof(text), "%s", MSQ_root_key_names[*val]);
+		nvgText(args.vg, textpos.x, textpos.y, MSQ_root_key_names[*val], NULL);
 				
-		nvgClosePath(args.vg);
+		// nvgClosePath(args.vg);
 	}
 
 };
 
-struct ModeScaleQuantScaleSelectLineDisplay : LightWidget {
+struct ModeScaleQuantScaleSelectLineDisplay : TransparentWidget {
 
 	ModeScaleQuant *module=NULL;
 	int *val = NULL;
+	std::shared_ptr<Font> font;
 	
 	ModeScaleQuantScaleSelectLineDisplay() {
-       
+       font = APP->window->loadFont(asset::plugin(pluginInstance, "res/fonts/Nunito-Bold.ttf"));
 	}
 
 	void draw(const DrawArgs &args) override { 
@@ -1133,7 +1106,7 @@ struct ModeScaleQuantScaleSelectLineDisplay : LightWidget {
 
 		
 
-		std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
+		// std::shared_ptr<Font> font = APP->window->loadFont(asset::system("res/fonts/Nunito-Bold.ttf"));  // load a Rack font: a sans-serif bold
 		
 		Vec textpos = Vec(68,12); 
 		
@@ -1157,17 +1130,17 @@ struct ModeScaleQuantScaleSelectLineDisplay : LightWidget {
 		nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 		nvgFillColor(args.vg, MSQ_paramTextColor);  
 	
-		if (module)  
+		// if (module)  
 		{
-			char text[128];
+			char text[128] = {0};
 			
-			snprintf(text, sizeof(text), "%s", MSQ_mode_names[*val]);
-			nvgText(args.vg, textpos.x, textpos.y, text, NULL);
+			// snprintf(text, sizeof(text), "%s", );
+			nvgText(args.vg, textpos.x, textpos.y, MSQ_mode_names[*val], NULL);
 
 			// add on the scale notes display out of this box
 			nvgFontSize(args.vg, 16);
 			nvgFillColor(args.vg, MSQ_panelTextColor);
-			strcpy(text,"");
+			// strcpy(text,"");
 			for (int i=0;i<MSQ_mode_step_intervals[*val][0];++i)
 			{
 				strcat(text,module->note_desig[module->notes[i]%MAX_NOTES]);  
@@ -1178,13 +1151,13 @@ struct ModeScaleQuantScaleSelectLineDisplay : LightWidget {
 			strcpy(module->MSQscaleText, text);  // save for module instance use
 		}
 		
-		nvgClosePath(args.vg);	
+		// nvgClosePath(args.vg);	
 	} 
 
 };
 
 ////////////////////////////////////
-struct ModeScaleQuantBpmDisplayWidget : LightWidget {
+struct ModeScaleQuantBpmDisplayWidget : TransparentWidget {
 
   ModeScaleQuant *module=NULL;	
   float *val = NULL;
@@ -1196,8 +1169,8 @@ struct ModeScaleQuantBpmDisplayWidget : LightWidget {
  
 struct ModeScaleQuantWidget : ModuleWidget  
 {
-	SvgPanel* svgPanel;
-	SvgPanel* darkPanel;
+	// SvgPanel* svgPanel;
+	// SvgPanel* darkPanel;
 	
 	rack::math::Rect  ParameterRect[MAX_PARAMS];  // warning, don't exceed the dimension
     rack::math::Rect  InportRect[MAX_INPORTS];  // warning, don't exceed the dimension
@@ -1215,10 +1188,15 @@ struct ModeScaleQuantWidget : ModuleWidget
 		rack::math::Rect*  ParameterRectLocal;   // warning, don't exceed the dimension
 		rack::math::Rect*  InportRectLocal; 	 // warning, don't exceed the dimension
 		rack::math::Rect*  OutportRectLocal;     // warning, don't exceed the dimension
+		std::shared_ptr<Font> textfont;
+		std::shared_ptr<Font> musicfont;
 			
 		CircleOf5thsDisplay(ModeScaleQuant* module)  
 		{
 		   	this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
+		   	textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+		   	musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+		   	canSquash = true;
 		}
  
 		void DrawCircle5ths(const DrawArgs &args, int root_key) 
@@ -1226,7 +1204,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 			for (int i=0; i<MAX_CIRCLE_STATIONS; ++i)
 			{
@@ -1259,7 +1237,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 12);
@@ -1267,11 +1245,11 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFontFaceId(args.vg, textfont->handle);	
 					nvgTextLetterSpacing(args.vg, -1);
 					nvgFillColor(args.vg, MSQ_panelTextColor);
-					char text[32];
-					snprintf(text, sizeof(text), "%s", MSQ_CircleNoteNames[i]);
+					// char text[32];
+					// snprintf(text, sizeof(text), "%s", MSQ_CircleNoteNames[i]);
 					Vec TextPosition=module->theCircleOf5ths.CircleCenter.plus(module->theCircleOf5ths.Circle5ths[i].radialDirection.mult(module->theCircleOf5ths.MiddleCircleRadius*.93f));
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-					nvgText(args.vg, TextPosition.x, TextPosition.y, text, NULL);
+					nvgText(args.vg, TextPosition.x, TextPosition.y, MSQ_CircleNoteNames[i], NULL);
 
 			}		
 		};
@@ -1281,7 +1259,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 			if (!module)
 				return;
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			int chord_type=0; 
 
@@ -1306,7 +1284,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFill(args.vg);
 					nvgStroke(args.vg);
 					
-					nvgClosePath(args.vg);	
+					// nvgClosePath(args.vg);	
 								
 					// draw text
 					nvgFontSize(args.vg, 10);
@@ -1314,15 +1292,15 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFontFaceId(args.vg, textfont->handle);	
 					nvgTextLetterSpacing(args.vg, -1); // as close as possible
 					nvgFillColor(args.vg, nvgRGBA(0x00, 0x00, 0x00, 0xff));
-					char text[32];
+					const char *text;
 				
 					chord_type=module->theCircleOf5ths.theDegreeSemiCircle.degreeElements[i].chordType;
 					
 					if (chord_type==0) // major
-						snprintf(text, sizeof(text), "%s", MSQ_circle_of_fifths_degrees_UC[(i - module->theCircleOf5ths.theDegreeSemiCircle.RootKeyCircle5thsPosition+7)%7]);
+						text = MSQ_circle_of_fifths_degrees_UC[(i - module->theCircleOf5ths.theDegreeSemiCircle.RootKeyCircle5thsPosition+7)%7];
 					else
 					if ((chord_type==1)||(chord_type==6)) // minor or diminished
-						snprintf(text, sizeof(text), "%s", MSQ_circle_of_fifths_degrees_LC[(i - module->theCircleOf5ths.theDegreeSemiCircle.RootKeyCircle5thsPosition+7)%7]);
+						text = MSQ_circle_of_fifths_degrees_LC[(i - module->theCircleOf5ths.theDegreeSemiCircle.RootKeyCircle5thsPosition+7)%7];
 					
 					
 					Vec TextPosition=module->theCircleOf5ths.CircleCenter.plus(module->theCircleOf5ths.theDegreeSemiCircle.degreeElements[i].radialDirection.mult(module->theCircleOf5ths.OuterCircleRadius*.92f));
@@ -1331,10 +1309,10 @@ struct ModeScaleQuantWidget : ModuleWidget
 					if (i==6) // draw diminished
 					{
 						Vec TextPositionBdim=Vec(TextPosition.x+9, TextPosition.y-4);
-						snprintf(text, sizeof(text), "o");
+						// snprintf(text, sizeof(text), "o");
 						nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 						nvgFontSize(args.vg, 8);
-						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, text, NULL);
+						nvgText(args.vg, TextPositionBdim.x, TextPositionBdim.y, "o", NULL);
 					}
 
 			}	
@@ -1350,7 +1328,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 		
 		void drawLabelAbove(const DrawArgs &args, Rect rect, const char* label, float fontSize)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, MSQ_panelTextColor);
@@ -1364,7 +1342,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 
 		void drawLabelRight(const DrawArgs &args, Rect rect, const char* label)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, MSQ_panelTextColor);
@@ -1379,7 +1357,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 
 		void drawLabelLeft(const DrawArgs &args, Rect rect, const char* label, float xoffset)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, MSQ_panelTextColor);
@@ -1393,7 +1371,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 
 		void drawLabelOffset(const DrawArgs &args, Rect rect, const char* label, float xoffset, float yoffset)  
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								    	
 			nvgBeginPath(args.vg);
 			nvgFillColor(args.vg, MSQ_panelTextColor);
@@ -1407,7 +1385,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 
 		void drawOutport(const DrawArgs &args, Vec OutportPos, const char* label, float value, int valueDecimalPoints, float scale=1.0)  // scale is vertical only
 		{
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 								
 			Vec displayRectPos= OutportPos.plus(Vec(-3, -scale*15));  // specific for 30x43 size
 			nvgBeginPath(args.vg);
@@ -1592,7 +1570,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, (begintopEdge+whiteKeyLength));//2
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth, begintopEdge);//3
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -1617,7 +1595,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//5
-					nvgClosePath(args.vg); //6
+					// nvgClosePath(args.vg); //6
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -1641,7 +1619,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge+whiteKeyLength);//4
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge-(blackKeyWidth/2.0)+whiteKeyWidth, begintopEdge);//5
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge, begintopEdge);//6
-					nvgClosePath(args.vg);  //6
+					// nvgClosePath(args.vg);  //6
 
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
@@ -1673,7 +1651,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge+(1.05*blackKeyLength));//6
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge2+whiteKeyWidth-(blackKeyWidth/2.0), begintopEdge);//7
 					nvgLineTo(args.vg, whiteKeyBeginLeftEdge1, begintopEdge);//8
-					nvgClosePath(args.vg);  //8
+					// nvgClosePath(args.vg);  //8
 										
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					
@@ -1698,7 +1676,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, (begintopEdge+blackKeyLength)); //2
 					nvgLineTo(args.vg, blackKeyBeginLeftEdge+blackKeyWidth, begintopEdge);  //3
 					nvgMoveTo(args.vg, blackKeyBeginLeftEdge, begintopEdge);//4
-					nvgClosePath(args.vg);  //4
+					// nvgClosePath(args.vg);  //4
 					nvgStrokeColor(args.vg, nvgRGB(0, 0, 0));
 					nvgStrokeWidth(args.vg, lineWidth);
 					nvgStroke(args.vg);
@@ -1729,67 +1707,67 @@ struct ModeScaleQuantWidget : ModuleWidget
 
 			if(module->randEnqueued)
 			{
-				APP->engine->randomizeModule(module);
+				// APP->engine->randomizeModule(module);
 				module->randEnqueued=false;
 			}
 
-			std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
-			std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
+			// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+			// std::shared_ptr<Font> musicfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Bravura.otf"));
 
 			if (true)  // draw rounded corner rects  for input jacks border 
 			{
-				char labeltext[128];
+				// char labeltext[128];
 							
-				snprintf(labeltext, sizeof(labeltext), "%s", "Root");
-			  	drawLabelRight(args,ParameterRectLocal[ModeScaleQuant::CONTROL_ROOT_KEY_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Root");
+			  	drawLabelRight(args,ParameterRectLocal[ModeScaleQuant::CONTROL_ROOT_KEY_PARAM], "Root");
 							
-				snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
-				drawLabelRight(args,ParameterRectLocal[ModeScaleQuant::CONTROL_SCALE_PARAM], labeltext);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Mode: bright->to darkest");
+				drawLabelRight(args,ParameterRectLocal[ModeScaleQuant::CONTROL_SCALE_PARAM], "Mode: bright->to darkest");
 						
-				snprintf(labeltext, sizeof(labeltext), "%s", "In");
-				drawLabelOffset(args, InportRectLocal[ModeScaleQuant::IN_POLY_QUANT_EXT_CV], labeltext, +2., -12.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "In");
+				drawLabelOffset(args, InportRectLocal[ModeScaleQuant::IN_POLY_QUANT_EXT_CV], "In", +2., -12.); 
 			
 			} 
 
 			if (true)  // draw rounded corner rects  for output jacks border   
 			{
-				char labeltext[128];
-				snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_CV_OUTPUT].pos, labeltext, 0, 1);
+				// char labeltext[128];
+				// snprintf(labeltext, sizeof(labeltext), "%s", "1V/Oct");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_CV_OUTPUT].pos, "1V/Oct", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Gate");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT].pos, "Gate", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Manual Chord Out");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_CV_OUTPUT], labeltext, -5., -25.0);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Manual Chord Out");
+				drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_HARMONY_CV_OUTPUT], "Manual Chord Out", -5., -25.0);
 
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_ROOT_OUTPUT].pos, labeltext, 0, 1, 1);  
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_ROOT_OUTPUT].pos, "Out", 0, 1, 1);  
 
 				//
-				snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., 7.); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +19.0); 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
-				drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], labeltext, -26., +31.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Poly");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], "Poly", -26., 7.); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Ext.->");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], "Ext.->", -26., +19.0); 
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Scale");
+				// drawLabelOffset(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT], "Scale", -26., +31.0); 
 				//
 										
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				// drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT].pos, "Out", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Quants");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT].pos, "Quants", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Trigs");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_POLY_QUANT_TRIGGER_OUTPUT].pos, "Trigs", 0, 1);
 
-				snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
-				drawLabelOffset(args, InportRectLocal[ModeScaleQuant::IN_POLY_QUANT_EXT_CV], labeltext, -5., -29.);  
+				// snprintf(labeltext, sizeof(labeltext), "%s", "|-----Poly Quantizer-----|");
+				drawLabelOffset(args, InportRectLocal[ModeScaleQuant::IN_POLY_QUANT_EXT_CV], "|-----Poly Quantizer-----|", -5., -29.);  
 			
-				snprintf(labeltext, sizeof(labeltext), "%s", "Out");
-				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_SCALE_OUTPUT].pos, labeltext, 0, 1);
+				// snprintf(labeltext, sizeof(labeltext), "%s", "Out");
+				drawOutport(args, OutportRectLocal[ModeScaleQuant::OUT_EXT_SCALE_OUTPUT].pos, "Out", 0, 1);
 
 							
 			}
@@ -1850,86 +1828,86 @@ struct ModeScaleQuantWidget : ModuleWidget
 				nvgTextLetterSpacing(args.vg, -1);
 				nvgFillColor(args.vg, MSQ_panelLineColor);
 				pos=Vec(beginEdge+12, beginTop+54); 
-				snprintf(text, sizeof(text), "%s", MSQ_gClef.c_str());  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", MSQ_gClef.c_str());  
+				nvgText(args.vg, pos.x, pos.y, MSQ_gClef.c_str(), NULL);
 
 				nvgFontSize(args.vg, 90);
 				pos=Vec(beginEdge+12, beginTop+78.5); 
-				snprintf(text, sizeof(text), "%s", MSQ_fClef.c_str());  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", MSQ_fClef.c_str());  
+				nvgText(args.vg, pos.x, pos.y, MSQ_fClef.c_str(), NULL);
 				
 				nvgFontSize(args.vg, 90);
 			
                				
 				nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-				snprintf(text, sizeof(text), "%s", MSQ_sharp.c_str());  
+				// snprintf(text, sizeof(text), "%s", MSQ_sharp.c_str());  
 				
 				num_sharps1=0;
 				vertical_offset1=0;
 				for (int i=0; i<7; ++i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (MSQ_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==1)
 					{
 						vertical_offset1=MSQ_root_key_sharps_vertical_display_offset[num_sharps1];
 						pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, MSQ_sharp.c_str(), NULL);
 						++num_sharps1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 			
-				snprintf(text, sizeof(text), "%s", MSQ_flat.c_str());  
+				// snprintf(text, sizeof(text), "%s", MSQ_flat.c_str());  
 				num_flats1=0;
 				vertical_offset1=0;
 				for (int i=6; i>=0; --i)  
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (MSQ_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==-1)
 					{
 						vertical_offset1=MSQ_root_key_flats_vertical_display_offset[num_flats1];
 						pos=Vec(beginEdge+24+(num_flats1*5), beginTop+33+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, MSQ_flat.c_str(), NULL);
 						++num_flats1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 
 				// now do for bass clef
 
 				nvgFontSize(args.vg, 90);
 				nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-				snprintf(text, sizeof(text), "%s", MSQ_sharp.c_str());  
+				// snprintf(text, sizeof(text), "%s", MSQ_sharp.c_str());  
 				
 				num_sharps1=0;
 				vertical_offset1=0;
 				for (int i=0; i<7; ++i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (MSQ_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==1)
 					{
 						vertical_offset1=MSQ_root_key_sharps_vertical_display_offset[num_sharps1];
 						pos=Vec(beginEdge+24+(num_sharps1*5), beginTop+75+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, MSQ_sharp.c_str(), NULL);
 						++num_sharps1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 			
-				snprintf(text, sizeof(text), "%s", MSQ_flat.c_str());  
+				// snprintf(text, sizeof(text), "%s", MSQ_flat.c_str());  
 				num_flats1=0;
 				vertical_offset1=0;
 				for (int i=6; i>=0; --i)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					if (MSQ_root_key_signatures_chromaticForder[module->notate_mode_as_signature_root_key][i]==-1)
 					{
 						vertical_offset1=MSQ_root_key_flats_vertical_display_offset[num_flats1];
 						pos=Vec(beginEdge+24+(num_flats1*5), beginTop+75+(vertical_offset1*yHalfLineSpacing));
-						nvgText(args.vg, pos.x, pos.y, text, NULL);
+						nvgText(args.vg, pos.x, pos.y, MSQ_flat.c_str(), NULL);
 						++num_flats1;
 					}
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 				}	
 
 				// designate Middle C as C4
@@ -1940,8 +1918,8 @@ struct ModeScaleQuantWidget : ModuleWidget
 				nvgFillColor(args.vg, MSQ_panelTextColor);
 				float mid_C_position = 181.0;  // middle C
 				pos=Vec(beginEdge-8, mid_C_position);  
-				snprintf(text, sizeof(text), "%s", "C4");  
-				nvgText(args.vg, pos.x, pos.y, text, NULL);
+				// snprintf(text, sizeof(text), "%s", "C4");  
+				nvgText(args.vg, pos.x, pos.y, "C4", NULL);
 
 				// draw notes on staves
 				float display_note_position=0; 
@@ -2146,17 +2124,17 @@ struct ModeScaleQuantWidget : ModuleWidget
 								ledgerPos.x += 0.25;
 
 							ledgerPos.y += 11.5;
-							snprintf(text, sizeof(text), "%s",  MSQ_staff1Line.c_str()); 
-							nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+							// snprintf(text, sizeof(text), "%s",  MSQ_staff1Line.c_str()); 
+							nvgText(args.vg, ledgerPos.x, ledgerPos.y, MSQ_staff1Line.c_str(), NULL);
 							for (int j=onLineNumberAboveStaves; j>1; --j)
 							{
 								ledgerPos.y += 6.0;
-								nvgText(args.vg,ledgerPos.x, ledgerPos.y, text, NULL);
+								nvgText(args.vg,ledgerPos.x, ledgerPos.y, MSQ_staff1Line.c_str(), NULL);
 							}
 							for (int j=onLineNumberBelowStaves; j>1; --j)
 							{
 								ledgerPos.y -= 6.0;
-								nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+								nvgText(args.vg, ledgerPos.x, ledgerPos.y, MSQ_staff1Line.c_str(), NULL);
 							}
 						} 
 
@@ -2218,16 +2196,16 @@ struct ModeScaleQuantWidget : ModuleWidget
 								else
 									ledgerPos.x += 0.25;
 
-								snprintf(text, sizeof(text), "%s",  MSQ_staff1Line.c_str()); 
+								// snprintf(text, sizeof(text), "%s",  MSQ_staff1Line.c_str()); 
 								for (int j=onSpaceNumberAboveStaves; j>=1; --j)
 								{
 									ledgerPos.y=55.5-(j*6.0);
-									nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+									nvgText(args.vg, ledgerPos.x, ledgerPos.y, MSQ_staff1Line.c_str(), NULL);
 								}
 								for (int j=onSpaceNumberBelowStaves; j>=1; --j)
 								{
 									ledgerPos.y=115.70+(j*6.0);
-									nvgText(args.vg, ledgerPos.x, ledgerPos.y, text, NULL);
+									nvgText(args.vg, ledgerPos.x, ledgerPos.y, MSQ_staff1Line.c_str(), NULL);
 								}
 							}
 						} 
@@ -2280,7 +2258,6 @@ struct ModeScaleQuantWidget : ModuleWidget
 			  nvgFillColor(args.vg, MSQ_panelHarmonyPartColor); 
 			else
 			  nvgFillColor(args.vg, MSQ_panelTextColor); 
-
 
 			int last_chord_root=module->theModeScaleQuantState.last_harmony_chord_root_note%12;
 						
@@ -2457,7 +2434,7 @@ struct ModeScaleQuantWidget : ModuleWidget
 			nvgMoveTo(args.vg, 185, 10);
 			nvgLineTo(args.vg, 185, 370);
 			nvgStroke(args.vg);
-			nvgClosePath(args.vg);
+			// nvgClosePath(args.vg);
 			//
 					
 		}  // end UpdatePanel()
@@ -2468,53 +2445,16 @@ struct ModeScaleQuantWidget : ModuleWidget
 		
 		void draw(const DrawArgs &args) override 
 		{   
-		 	if (!module)  // if there is no module, draw the static panel image, i.e., in the browser
-			{
-				nvgBeginPath(args.vg);
-				nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
-				
-				if (MSQ_panelTheme==0)  // light theme
-				{
-					std::shared_ptr<Image> lightPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/ModeScaleQuant-light.png"));
-					if (lightPanelImage) 
-					{
-						int height=0;
-						int width=0;
-						nvgImageSize(args.vg, lightPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, lightPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-				else // dark theme
-				{
-					std::shared_ptr<Image> darkPanelImage = APP->window->loadImage(asset::plugin(pluginInstance,"res/ModeScaleQuant-dark.png"));
-					if (darkPanelImage) 
-					{
-						int height=0;
-				        int width=0;
-						nvgImageSize(args.vg, darkPanelImage->handle, &width, &height);
-						NVGpaint nvgpaint=nvgImagePattern(args.vg, 0.0, 0.0, width, height, 0.0, darkPanelImage->handle, 1.0);
-						nvgFillPaint(args.vg, nvgpaint);
-						nvgFill(args.vg);
-					}
-				}
-							
-				nvgClosePath(args.vg);
-			    Widget::draw(args);
-			    return;  // do not proceedurally draw panel 
-			}
-
 			if (true)  // false to disable most nanovg panel rendering for testing
 			{
 				            							
 				// draw ModeScaleQuant logo and chord legend
 				
-				std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
+				// std::shared_ptr<Font> textfont = APP->window->loadFont(asset::plugin(pluginInstance, "res/Ubuntu Condensed 400.ttf"));
 							
 				if (textfont)
 				{
-					nvgBeginPath(args.vg);
+					// nvgBeginPath(args.vg);
 					nvgFontSize(args.vg, 27);
 					nvgFontFaceId(args.vg, textfont->handle);
 					nvgTextLetterSpacing(args.vg, -1);
@@ -2522,31 +2462,31 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgTextAlign(args.vg,NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
 					
 					char text[128];
-					snprintf(text, sizeof(text), "%s", "PS-PurrSoftware");
+					// snprintf(text, sizeof(text), "%s", "PS-PurrSoftware");
 								
 					Vec pos=Vec(90, 37); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "PS-PurrSoftware", NULL);
 
-					snprintf(text, sizeof(text), "%s", "ModeScaleQuant");
+					// snprintf(text, sizeof(text), "%s", "ModeScaleQuant");
 					pos=Vec(90, 65); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "ModeScaleQuant", NULL);
 
-					snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
+					// snprintf(text, sizeof(text), "%s", "Mode Scale Notes");
 					nvgFontSize(args.vg, 11);
 					pos=Vec(270, 340); 
 					nvgStrokeWidth(args.vg, 3.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
+					nvgText(args.vg, pos.x, pos.y, "Mode Scale Notes", NULL);
 				
 
-					snprintf(text, sizeof(text), "%s", "Diatonic Circle of 5ths");  
+					// snprintf(text, sizeof(text), "%s", "Diatonic Circle of 5ths");  
 					nvgFontSize(args.vg, 15);
 					pos=Vec(350, 35);  
 					nvgStrokeWidth(args.vg, 2.0);
-					nvgText(args.vg, pos.x, pos.y, text, NULL); 
+					nvgText(args.vg, pos.x, pos.y, "Diatonic Circle of 5ths", NULL); 
 
-					nvgClosePath(args.vg);
+					// nvgClosePath(args.vg);
 
 					nvgStrokeWidth(args.vg, 1.0);
 					nvgStrokeColor(args.vg, MSQ_panelLineColor);
@@ -2565,12 +2505,12 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0xff, 0x20, 0x20, (int)opacity));  // reddish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Major"); 
+					// snprintf(text, sizeof(text), "%s", "Major"); 
 					nvgFillColor(args.vg, MSQ_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(261, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Major", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 				
@@ -2583,12 +2523,12 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0x20, 0xff, (int)opacity));  //bluish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Minor"); 
+					// snprintf(text, sizeof(text), "%s", "Minor"); 
 					nvgFillColor(args.vg, MSQ_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(336, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Minor", NULL);
+					// nvgClosePath(args.vg);
 
 					nvgBeginPath(args.vg);
 				
@@ -2601,12 +2541,12 @@ struct ModeScaleQuantWidget : ModuleWidget
 					nvgFillColor(args.vg, nvgRGBA(0x20, 0xff, 0x20, (int)opacity));  // greenish
 					nvgStroke(args.vg);
 					nvgFill(args.vg);
-					snprintf(text, sizeof(text), "%s", "Diminished"); 
+					// snprintf(text, sizeof(text), "%s", "Diminished"); 
 					nvgFillColor(args.vg, MSQ_panelTextColor);
 					nvgFontSize(args.vg, 10);
 					pos=Vec(404, 50);  
-					nvgText(args.vg, pos.x, pos.y, text, NULL);
-					nvgClosePath(args.vg);
+					nvgText(args.vg, pos.x, pos.y, "Diminished", NULL);
+					// nvgClosePath(args.vg);
 					
 				} 
 				
@@ -2631,17 +2571,17 @@ struct ModeScaleQuantWidget : ModuleWidget
 		this->module = module;  //  most plugins do not do this.  It was introduced in singleton implementation
 
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleQuant-light.svg")));
-		svgPanel=(SvgPanel*)getPanel();
-		svgPanel->setVisible((MSQ_panelTheme) == 0);  
+		// svgPanel=(SvgPanel*)getPanel();
+		// svgPanel->setVisible((MSQ_panelTheme) == 0);  
 					
-		MSQ_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
+		// MSQ_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
 		
-		darkPanel = new SvgPanel();
-		darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleQuant-dark.svg")));
-		darkPanel->setVisible((MSQ_panelTheme) == 1);  
-		addChild(darkPanel);
+		// darkPanel = new SvgPanel();
+		// darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ModeScaleQuant-dark.svg")));
+		// darkPanel->setVisible((MSQ_panelTheme) == 1);  
+		// addChild(darkPanel);
 							
-		rack::random::init();  // must be called per thread 
+		// rack::random::init();  // must be called per thread 
 
 		 if (true)   // must be executed even if module* is null. module* is checked for null below where accessed as it is null in browser preview
 		 {
@@ -2655,24 +2595,24 @@ struct ModeScaleQuantWidget : ModuleWidget
 			ModeScaleQuantRootKeySelectDisplay->box.pos = Vec(85.,RootKey_row-10.0); 
 			ModeScaleQuantRootKeySelectDisplay->box.size = Vec(40, 22); 
 			ModeScaleQuantRootKeySelectDisplay->module=module;
-			if (module) 
+			// if (module) 
 				ModeScaleQuantRootKeySelectDisplay->val = &module->root_key;
-			else
-			{ 
-				ModeScaleQuantRootKeySelectDisplay->val = &dummyindex;  // strictly for browser visibility
-			}
+			// else
+			// { 
+			// 	ModeScaleQuantRootKeySelectDisplay->val = &dummyindex;  // strictly for browser visibility
+			// }
 			addChild(ModeScaleQuantRootKeySelectDisplay);
 
 			ModeScaleQuantScaleSelectLineDisplay *ModeScaleQuantScaleSelectDisplay = new ModeScaleQuantScaleSelectLineDisplay();
 			ModeScaleQuantScaleSelectDisplay->box.pos =Vec(1.0, ScaleSelect_row+10.0); 
 			ModeScaleQuantScaleSelectDisplay->box.size = Vec(130, 22); 
 			ModeScaleQuantScaleSelectDisplay->module=module;
-			if (module) 
+			// if (module) 
 				ModeScaleQuantScaleSelectDisplay->val = &module->mode;
-			else
-			{ 
-				ModeScaleQuantScaleSelectDisplay->val = &dummyindex;  // strictly for browser visibility
-			}
+			// else
+			// { 
+			// 	ModeScaleQuantScaleSelectDisplay->val = &dummyindex;  // strictly for browser visibility
+			// }
 			
 			addChild(ModeScaleQuantScaleSelectDisplay);
 
@@ -2689,62 +2629,62 @@ struct ModeScaleQuantWidget : ModuleWidget
 			//*************   Note: Each LEDButton needs its light and that light needs a unique ID, needs to be added to an array and then needs to be repositioned along with the button.  Also needs to be enumed with other lights so lights[] picks it up.
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_C_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.227, 37.257)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_C_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_C_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_1);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_1]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.227, 37.257)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_1);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_1]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_G_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.479, 41.32)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_G_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_G_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_2);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_2]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.479, 41.32)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_2);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_2]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_D_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(143.163, 52.155)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_D_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_D_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_3);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_3]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(143.163, 52.155)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_3);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_3]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_A_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(147.527, 67.353)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_A_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_A_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_4);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_4]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(147.527, 67.353)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_4);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_4]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_E_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(141.96, 83.906)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_E_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_E_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_5);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_5]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(141.96, 83.906)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_5);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_5]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_B_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(132.931, 94.44)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_B_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_B_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_6);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_6]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(132.931, 94.44)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_6);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_6]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_GBFS_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(116.378, 98.804)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_GBFS_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_GBFS_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_7);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_7]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(116.378, 98.804)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_7);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_7]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_DB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.029, 93.988)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_DB_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_DB_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_8);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_8]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.029, 93.988)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_8);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_8]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_AB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(91.097, 83.906)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_AB_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_AB_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_9);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_9]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(91.097, 83.906)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_9);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_9]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_EB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(86.282, 68.106)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_EB_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_EB_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_10);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_10]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(86.282, 68.106)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_10);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_10]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_BB_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(89.743, 52.004)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_BB_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_BB_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_11);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_11]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(189.743, 52.004)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_11);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_11]);
 		
 			paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_F_PARAM]=createParamCentered<LEDButton>(mm2px(Vec(101.781, 40.568)), module, ModeScaleQuant::BUTTON_CIRCLESTEP_F_PARAM);
 			addParam(paramWidgets[ModeScaleQuant::BUTTON_CIRCLESTEP_F_PARAM]);
-			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumSimpleLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_12);
+			lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_12]=createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(101.781, 40.568)), module, ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_12);
 			addChild(lightWidgets[ModeScaleQuant::LIGHT_LEDBUTTON_CIRCLESTEP_12]);
 		
 	//*************
@@ -2812,8 +2752,8 @@ struct ModeScaleQuantWidget : ModuleWidget
 			outPortWidgets[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT]=createOutputCentered<PJ301MPort>(Vec(596.67, 366.93), module, ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT);
 			addOutput(outPortWidgets[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT]);
 					
-			outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(Vec(1122.05, 368.60), module, ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT);
-			addOutput(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]);
+			// outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]=createOutputCentered<PJ301MPort>(Vec(1122.05, 368.60), module, ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT);
+			// addOutput(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]);
 
 			outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT]=createOutputCentered<PJ301MPort>(Vec(206.69, 1018.70), module, ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT);
 			addOutput(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT]);
@@ -2912,8 +2852,8 @@ struct ModeScaleQuantWidget : ModuleWidget
 			drawCenter=drawCenter.plus(Vec(40,0));
 			outPortWidgets[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleQuant::OUT_HARMONY_GATE_OUTPUT]->box.size.div(2.));
 		
-			drawCenter=Vec(146., PolyExtScale_row);
-			outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
+			// drawCenter=Vec(146., PolyExtScale_row);
+			// outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_SCALE_OUTPUT]->box.size.div(2.));
 										
 			drawCenter=Vec(50., Quantizer_row);  
 			outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT]->box.pos=drawCenter.minus(outPortWidgets[ModeScaleQuant::OUT_EXT_POLY_QUANT_OUTPUT]->box.size.div(2.));
@@ -2958,63 +2898,37 @@ struct ModeScaleQuantWidget : ModuleWidget
 	void appendContextMenu(Menu *menu) override 
 	{  
         ModeScaleQuant *module = dynamic_cast<ModeScaleQuant*>(this->module);
-		if (module==NULL)
-			return;
-   
-		MenuLabel *panelthemeLabel = new MenuLabel();
-        panelthemeLabel->text = "Panel Theme                               ";
-        menu->addChild(panelthemeLabel);
 
-		ModeScaleQuantPanelThemeItem *lightpaneltheme_Item = new ModeScaleQuantPanelThemeItem();  // this accomodates json loaded value
-        lightpaneltheme_Item->text = "  light";
-		lightpaneltheme_Item->module = module;
-   	    lightpaneltheme_Item->theme = 0;
-	    menu->addChild(lightpaneltheme_Item); 
-
-		ModeScaleQuantPanelThemeItem *darkpaneltheme_Item = new ModeScaleQuantPanelThemeItem();  // this accomodates json loaded value
-        darkpaneltheme_Item->text = "  dark";
-		darkpaneltheme_Item->module = module;
-   	    darkpaneltheme_Item->theme = 1;
-        menu->addChild(darkpaneltheme_Item);
-
-		// create contrast control
-	
-		MinMaxSliderItem *minSliderItem = new MinMaxSliderItem(&MSQ_panelContrast, "Contrast");
-		minSliderItem->box.size.x = 200.f;
-		menu->addChild(minSliderItem);
-	
-		//
-
-		MenuLabel *modeLabel = new MenuLabel();
-        modeLabel->text = "Scale Out Mode                               ";
-        menu->addChild(modeLabel);
+		// MenuLabel *modeLabel = new MenuLabel();
+        // modeLabel->text = "Scale Out Mode                               ";
+        // menu->addChild(modeLabel);
 		
 		
-		ModeScaleQuantScaleOutModeItem *chromatic_Item = new ModeScaleQuantScaleOutModeItem();
-        chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
-        chromatic_Item->module = module;
-        chromatic_Item->mode = ModeScaleQuant::HEPTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_Item);
+		// ModeScaleQuantScaleOutModeItem *chromatic_Item = new ModeScaleQuantScaleOutModeItem();
+        // chromatic_Item->text = "  Heptatonic Chromatic Scale-12ch";
+        // chromatic_Item->module = module;
+        // chromatic_Item->mode = ModeScaleQuant::HEPTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_Item);
 
-		ModeScaleQuantScaleOutModeItem *heptatonic_Item = new ModeScaleQuantScaleOutModeItem(); 
-        heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
-        heptatonic_Item->module = module;
-        heptatonic_Item->mode = ModeScaleQuant::HEPTATONIC_DIATONIC_STD_7CH;
-        menu->addChild(heptatonic_Item);
+		// ModeScaleQuantScaleOutModeItem *heptatonic_Item = new ModeScaleQuantScaleOutModeItem(); 
+        // heptatonic_Item->text = "  Heptatonic Diatonic STD-7ch";
+        // heptatonic_Item->module = module;
+        // heptatonic_Item->mode = ModeScaleQuant::HEPTATONIC_DIATONIC_STD_7CH;
+        // menu->addChild(heptatonic_Item);
 
 
-		ModeScaleQuantScaleOutModeItem *pentatonic_Item = new ModeScaleQuantScaleOutModeItem();
-        pentatonic_Item->text = "  Pentatonic-5ch";
-        pentatonic_Item->module =module;
-        pentatonic_Item->mode = ModeScaleQuant::PENTATONIC_5CH;
-        menu->addChild(pentatonic_Item); 
+		// ModeScaleQuantScaleOutModeItem *pentatonic_Item = new ModeScaleQuantScaleOutModeItem();
+        // pentatonic_Item->text = "  Pentatonic-5ch";
+        // pentatonic_Item->module =module;
+        // pentatonic_Item->mode = ModeScaleQuant::PENTATONIC_5CH;
+        // menu->addChild(pentatonic_Item); 
 		
 
-		ModeScaleQuantScaleOutModeItem *chromatic_pentatonic_Item = new ModeScaleQuantScaleOutModeItem();
-        chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
-        chromatic_pentatonic_Item->module = module;
-        chromatic_pentatonic_Item->mode = ModeScaleQuant::PENTATONIC_CHROMATIC_12CH;
-        menu->addChild(chromatic_pentatonic_Item);
+		// ModeScaleQuantScaleOutModeItem *chromatic_pentatonic_Item = new ModeScaleQuantScaleOutModeItem();
+        // chromatic_pentatonic_Item->text = "  Pentatonic Chromatic-12ch";
+        // chromatic_pentatonic_Item->module = module;
+        // chromatic_pentatonic_Item->mode = ModeScaleQuant::PENTATONIC_CHROMATIC_12CH;
+        // menu->addChild(chromatic_pentatonic_Item);
 		
 	}  // end ModeScaleQuantWidget() 
 
@@ -3022,295 +2936,121 @@ struct ModeScaleQuantWidget : ModuleWidget
 	{  
 		ModeScaleQuant *module = dynamic_cast<ModeScaleQuant*>(this->module);  
 
-		if (true) // needs to happen even if module==null
-		{
-			if (svgPanel)
-			    svgPanel->setVisible((MSQ_panelTheme) == 0);    
-			if (darkPanel)                             
-				darkPanel->setVisible((MSQ_panelTheme) == 1);    
-		
-			float contrast=MSQ_panelContrast;
-
-			// update the global panel theme vars
-			if (MSQ_panelTheme==0)  // light theme
-			{
-				MSQ_panelcolor=nvgRGBA((unsigned char)230,(unsigned char)230,(unsigned char)230,(unsigned char)255);
-				float color =255*(1-contrast);
-				MSQ_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black text
-				MSQ_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // black lines
-				color =255*contrast;
-				MSQ_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-			
-				{
-					float r=MSQ_panelHarmonyPartBaseColor.r; 
-					float g=(1-contrast);
-					float b=(1-contrast);
-					MSQ_panelHarmonyPartColor=nvgRGBA(r*156, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=MSQ_panelArpPartBaseColor.b;
-					MSQ_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=MSQ_panelBassPartBaseColor.g;
-					float b=(1-contrast);
-					MSQ_panelBassPartColor=nvgRGBA(r*255, g*128, b*255, 255);
-				}
-				{
-					float r=(1-contrast);
-					float g=(1-contrast);
-					float b=(1-contrast);
-					MSQ_panelMelodyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-						
-			}
-			else  // dark theme
-			{
-				MSQ_panelcolor=nvgRGBA((unsigned char)40,(unsigned char)40,(unsigned char)40,(unsigned char)255);
-				float color = 255*contrast;
-				MSQ_panelTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white text
-				MSQ_panelLineColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)color,(unsigned char)255);  // white lines
-				color =255*contrast;
-				MSQ_paramTextColor=nvgRGBA((unsigned char)color,(unsigned char)color,(unsigned char)0,(unsigned char)255);  // yellow text
-
-				{
-					float r=MSQ_panelHarmonyPartBaseColor.r*contrast;
-					float g=0.45;
-					float b=0.45;
-					MSQ_panelHarmonyPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float b=MSQ_panelArpPartBaseColor.b*contrast;
-					float r=0.45;
-					float g=0.45;
-					MSQ_panelArpPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float g=MSQ_panelBassPartBaseColor.g*contrast;
-					float r=0.45;
-					float b=0.45;
-					MSQ_panelBassPartColor=nvgRGBA(r*255, g*255, b*255, 255);
-				}
-				{
-					float r=(contrast);
-					float g=(contrast);
-					float b=(contrast);
-					MSQ_panelMelodyPartColor=nvgRGBA(r*228, g*228, b*228, 255);
-				}
-			}
-		}
-
 	
 		// root inport cable handling 
-		if (module != NULL)  // not in the browser
 		{
-            module->onResetScale();  // make sure channels and scale notes outports are initialized for each frame, in case they have not been iniitialized
-
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[ModeScaleQuant::IN_ROOT_KEY_EXT_CV]))  // look at each cable on the root key input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[ModeScaleQuant::IN_ROOT_KEY_EXT_CV]))
 			{
-				if (!cwIn->isComplete())    // the cable connection has NOT been completed
-				{        
-				   module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_ROOT_KEY_EXT_CV
-				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
 				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+				if ((outputmodel->slug == "ModeScaleProgressions")||
+					(outputmodel->slug == "ModeScaleQuant")|| 
+				    (outputmodel->slug == "Meander"))  
+				{
+					if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{
-						//	if ((outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant"))|| 
-						//	    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-						    if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							{
-							//	if ((outputId==4)||(outputId==26))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								if ((outputId==4)||(outputId==26)||(outputId==15))  // "cable outputID is OUT_EXT_ROOT_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theModeScaleQuantState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than ModeScaleQuant
-							{
-								module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-						}
+						module->theModeScaleQuantState.RootInputSuppliedByRootOutput=true;  // but may be made false based on cable input
 					}
-					else  // no outputModule
-					{
-						module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-					}
+				}
+				else // connected to moudule other than ModeScaleQuant
+				{
+					module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
+				}
 
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+					if ((inputmodel->slug == "ModeScaleProgressions")||
+						(inputmodel->slug == "ModeScaleQuant")||  
+					    (inputmodel->slug == "Meander"))  
 					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+						if (inputId==ModeScaleQuant::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
 						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-							//	if ((inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant"))||  
-							//	    (inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							    if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							       (inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							       (inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-								{
-									if (inputId==ModeScaleQuant::IN_ROOT_KEY_EXT_CV)  // "cable inputID is  IN_ROOT_KEY_EXT_CV"
-									{
-									}
-									else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
-									{
-										module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-									}
-								}
-								else  // connected to moudule other than Maender
-								{
-									module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-								}
-							}
-							else  // no input model
-							{
-								module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
-							}
 						}
-						else  // "cable inputModule is equal to cable outputModule"
+						else  // "cable inputID is not IN_ROOT_KEY_EXT_CV"
 						{
 							module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
 						}
 					}
-					else  // no input module
+					else  // connected to moudule other than Maender
 					{
 						module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
 					}
 				}
-				else  // there is no cable attached
+				else  // "cable inputModule is equal to cable outputModule"
 				{
 					module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
 				}
 			}
+			else  // there is no cable attached
+			{
+				module->theModeScaleQuantState.RootInputSuppliedByRootOutput=false;
+			}
 		}  
 
 		// add mode inport cable handling 
-		if (module != NULL)  // not in the browser
 		{
 			//"Examine module MODE cables--------------------"
-			for (CableWidget* cwIn : APP->scene->rack->getCablesOnPort(inPortWidgets[ModeScaleQuant::IN_SCALE_EXT_CV]))  // look at each cable on the mode scale input port. There should be 0 or 1  cables on an input port.
+			if (auto cwIn = api0::gRackWidget->wireContainer->getTopWire(inPortWidgets[ModeScaleQuant::IN_SCALE_EXT_CV]))
 			{
-				if (!cwIn->isComplete())   // the cable connection has NOT been completed    
-				{      
-				   module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;	
-                   continue;
-				}
+				auto cable = cwIn->wire;
 
-				engine:: Cable* cable=cwIn->getCable();
-
-				if (cable)  // there is a cable connected to IN_SCALE_EXT_CV
-				{
-					int inputId = cable->inputId;
-					int outputId = cable->outputId;
+				int inputId = cable->inputId;
+				int outputId = cable->outputId;
 				
-					Module * 	outputModule = cable->outputModule;  // cable output module
-					if (outputModule)
+				plugin::Model *outputmodel = cable->outputModule->getModel(); 
+               	if ((outputmodel->slug == "ModeScaleProgressions")||
+               		(outputmodel->slug == "ModeScaleQuant") || 
+				    (outputmodel->slug == "Meander"))  
+				{
+					if ((outputId==27)||(outputId==5)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT"  kludge reference to out of scope variable
 					{
-						plugin::Model *outputmodel = outputModule->getModel(); 
-						if (outputmodel)
-						{
-                       	    if ((outputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							    (outputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							    (outputmodel->slug.substr(0, 7) == std::string("Meander")))  
-							{
-								if ((outputId==5)||(outputId==27)||(outputId==16))  // "cable outputID is OUT_EXT_SCALE_OUTPUT" kludge out of scope ModeScaleQuant variable access
-								{
-									module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
-								}
-							}
-							else // connected to moudule other than ModeScaleQuant
-							{
-								module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-							}
-						}
-						else  // no outputModel
-						{
-							module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-						}
-					}
-					else  // no outputModule
-					{
-						module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-					}
-
-					Module * 	inputModule = cable->inputModule;    // cable input module
-					if (inputModule)
-					{
-						if ((inputModule!=outputModule))  //"cable inputModule is NOT equal to cable outputModule"
-						{
-							plugin::Model *inputmodel = inputModule->getModel(); 	
-							if (inputmodel)
-							{
-							    if ((inputmodel->slug.substr(0, 21) == std::string("ModeScaleProgressions")) || 
-							       (inputmodel->slug.substr(0, 14) == std::string("ModeScaleQuant")) ||
-							       (inputmodel->slug.substr(0, 7) == std::string("Meander")))  
-								{
-									if (inputId==ModeScaleQuant::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
-									{
-									}
-									else // "cable inputID is not IN_SCALE_EXT_CV"
-									{
-										module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-									}
-								}
-								else  // connected to moudule other than Maender
-								{
-									module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-								}
-							}
-							else  // no input model
-							{
-								module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-							}
-						}
-						else  // "cable inputModule is equal to cable outputModule"
-						{
-							module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
-						}
-					}
-					else  // no input module
-					{
-						module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
+						module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=true;  // but may be made false based on cable input
 					}
 				}
-				else  // there is no cable attached
+				else // connected to moudule other than ModeScaleQuant
 				{
 					module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
 				}
+
+				if ((cable->inputModule!=cable->outputModule))  //"cable inputModule is NOT equal to cable outputModule"
+				{
+					plugin::Model *inputmodel = cable->inputModule->getModel(); 	
+						if ((outputmodel->slug == "ModeScaleProgressions")||
+							(inputmodel->slug == "ModeScaleQuant")||  
+						    (inputmodel->slug == "Meander"))  
+						{
+							if (inputId==ModeScaleQuant::IN_SCALE_EXT_CV)  // "cable inputID is  IN_SCALE_EXT_CV"
+							{
+							}
+							else // "cable inputID is not IN_SCALE_EXT_CV"
+							{
+								module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
+							}
+						}
+						else  // connected to moudule other than Maender
+						{
+							module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
+						}
+				}
+				else  // "cable inputModule is equal to cable outputModule"
+				{
+					module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
+				}
+			}
+			else  // there is no cable attached
+			{
+				module->theModeScaleQuantState.ModeInputSuppliedByModeOutput=false;
 			}
 		
 		} 
 		//
 
-		// if in the browser, force a panel redraw per frame with the current panel theme
-		if (!module) {
-			DirtyEvent eDirty;
-			parent->parent->onDirty(eDirty);
-		}
-		else  // not in the browser
-		Widget::step();  // most modules do this rather than ModuleWidget::step()
+		ModuleWidget::step();
 	
 		
 	} // end step() 

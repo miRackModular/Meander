@@ -289,6 +289,7 @@ struct MeanderState
 	bool renderScoreEnabled=true;
 	bool RootInputSuppliedByRootOutput=false;
 	bool ModeInputSuppliedByModeOutput=false;
+	bool updateDisplay=false;
 }	theMeanderState;
 
  
